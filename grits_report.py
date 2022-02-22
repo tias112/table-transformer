@@ -108,6 +108,7 @@ class GritsReport:
         print("loading model")
         self.device = torch.device(args.device)
         self.model, _, self.postprocessors = get_model(args, self.device)
+        self.args=args
         self.model.eval()
 
         #assert args.data_type == "structure", "GriTS is only applicable to structure recognition"
