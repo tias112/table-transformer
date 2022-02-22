@@ -26,6 +26,21 @@ from table_datasets import PDFTablesDataset,RandomMaxResize
 
 from grits import grits
 
+def get_class_map(data_type):
+    if data_type == 'structure':
+        class_map = {
+            'table': 0,
+            'table column': 1,
+            'table row': 2,
+            'table column header': 3,
+            'table projected row header': 4,
+            'table spanning cell': 5,
+            'no object': 6
+        }
+    else:
+        class_map = {'table': 0, 'table rotated': 1, 'no object': 2}
+    return class_map
+
 
 def get_data(args):
     """
@@ -34,7 +49,7 @@ def get_data(args):
     """
     # Datasets
     print("loading data")
-    class_map = get_class_map(args.data_type)
+    class_map = get_class_map('structure')
 
 
     dataset_test = PDFTablesDataset(os.path.join(args.data_root_dir,
@@ -95,7 +110,7 @@ class GritsReport:
         self.model, _, self.postprocessors = get_model(args, self.device)
         self.model.eval()
 
-        assert args.data_type == "structure", "GriTS is only applicable to structure recognition"
+        #assert args.data_type == "structure", "GriTS is only applicable to structure recognition"
         self.dataset_test = get_data(args)
 
     def run_grits(self, debug=True):
