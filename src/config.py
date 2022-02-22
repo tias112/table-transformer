@@ -51,3 +51,4 @@ class Args:
     seed=42
     start_epoch=0
     num_workers=1
+    data_type='structure'
