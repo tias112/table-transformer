@@ -19,7 +19,7 @@ sys.path.append("src")
 #from engine import evaluate, train_one_epoch
 from models import build_model
 import util.misc as utils
-import datasets.transforms as R
+#import datasets.transforms as R
 
 from config import Args
 from table_datasets import PDFTablesDataset,RandomMaxResize
