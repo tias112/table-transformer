@@ -116,7 +116,7 @@ class GritsReport:
 
     def run_grits(self, debug=True):
         self.args.debug = debug
-        self.grits(self.args, self.dataset_test, self.device)
+        grits(self.args, self.model, self.dataset_test, self.device)
 
 
 def main():
