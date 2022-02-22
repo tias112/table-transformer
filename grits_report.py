@@ -16,7 +16,7 @@ import streamlit as st
 sys.path.append("detr")
 sys.path.append("src")
 
-from engine import evaluate, train_one_epoch
+#from engine import evaluate, train_one_epoch
 from models import build_model
 import util.misc as utils
 import datasets.transforms as R
