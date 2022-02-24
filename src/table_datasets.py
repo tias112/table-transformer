@@ -291,6 +291,7 @@ class PDFTablesDataset(torch.utils.data.Dataset):
     def __init__(self, root, transforms=None, max_size=None, do_crop=True, make_coco=False,
                  include_original=False, max_neg=None, negatives_root=None, xml_fileset="filelist.txt",
                 image_extension='.png', class_map=None):
+        print(root)
         self.root = root
         self.transforms = transforms
         self.do_crop=do_crop

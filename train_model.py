@@ -36,7 +36,7 @@ def get_data(args):
     evaluation or GriTS metric evaluation
     """
     # Datasets
-    print("loading data")
+    print("loading data for training")
     class_map = get_class_map(args.data_type)
 
     dataset_train = PDFTablesDataset(
