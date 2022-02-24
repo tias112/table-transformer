@@ -30,7 +30,7 @@ from train_core import get_transform
 from train_core import get_model
 from train_core import train
 
-def get_data(args):
+def get_data2(args):
     """
     Based on the args, retrieves the necessary data to perform training,
     evaluation or GriTS metric evaluation
@@ -102,7 +102,7 @@ class TrainModel:
         self.model.eval()
 
         #assert args.data_type == "structure", "GriTS is only applicable to structure recognition"
-        self.dataset_test = get_data(args)
+        #self.dataset_test = get_data2(args)
 
     def run_training(self, debug=True):
         self.args.debug = debug

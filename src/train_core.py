@@ -143,13 +143,16 @@ def get_data(args):
 
     if args.mode == "train":
         dataset_train = PDFTablesDataset(
-            os.path.join(args.data_root_dir, "train"),
-            get_transform(args.data_type, "train"),
+            #os.path.join(args.data_root_dir, "train"),
+            #get_transform(args.data_type, "train"),  TODO
+            os.path.join(args.data_root_dir, "val"),
+            get_transform(args.data_type, "val"),
             do_crop=False,
             max_neg=0,
             make_coco=False,
             image_extension=".jpg",
-            xml_fileset="train_filelist.txt",
+            xml_fileset="val_filelist.txt",
+            #xml_fileset="train_filelist.txt",
             class_map=class_map)
         dataset_val = PDFTablesDataset(os.path.join(args.data_root_dir, "val"),
                                        get_transform(args.data_type, "val"),
