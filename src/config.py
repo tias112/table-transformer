@@ -52,3 +52,4 @@ class Args:
     start_epoch=0
     num_workers=1
     data_type='structure'
+    model_load_path=''
