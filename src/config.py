@@ -53,3 +53,4 @@ class Args:
     num_workers=1
     data_type='structure'
     model_load_path=''
+    mode='train'

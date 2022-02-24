@@ -88,6 +88,7 @@ class TrainModel:
         args.data_root_dir = data_root_dir
         args.config_file="structure_config.json"
         args.data_type='structure'
+        args.mode='train'
         # fix the seed for reproducibility
         seed = args.seed + utils.get_rank()
         torch.manual_seed(seed)
