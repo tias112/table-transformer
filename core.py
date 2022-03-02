@@ -94,7 +94,6 @@ class TableRecognizer:
         print("loading model")
         self.device = torch.device(args.device)
         self.model, _, self.postprocessors = get_model(args, self.device)
-        print(self.model)
         self.model.eval()
 
         class_map = get_class_map()
@@ -117,11 +116,8 @@ class TableRecognizer:
         outputs = None
         with torch.no_grad():
             outputs = self.model(img_tensor)
-        print(outputs['pred_boxes'])
-        #TODO: visualize/print outputs
+
         image_size = torch.unsqueeze(torch.as_tensor([int(h), int(w)]), 0).to(self.device)
-        print(image_size)
-        #TODO: print image_size
         results = self.postprocessors['bbox'](outputs, image_size)[0]
         print(results)
 
@@ -131,17 +127,28 @@ class TableRecognizer:
                 if score < thresh: continue
 
                 xmin, ymin, xmax, ymax = list(map(int, results["boxes"][idx]))
+                category_type = results["labels"][idx].item()
+                colors = [
+                    {'name': 'brown','r':128,'g':64,'b':64,'dx':3,'dy':3},
+                    {'name': 'red', 'r': 255, 'g': 0, 'b': 0, 'dx': 4, 'dy': 4},
+                    {'name': 'blue', 'r': 0, 'g': 0, 'b': 255, 'dx': 3, 'dy': 3},
+                    {'name': 'magenta', 'r': 255, 'g': 0, 'b': 255, 'dx': 1, 'dy': 1},
+                    {'name': 'cyan', 'r': 0, 'g': 255, 'b': 255, 'dx': 2, 'dy': 2},
+                    {'name': 'green', 'r': 0, 'g': 255, 'b': 0, 'dx': 3, 'dy': 3},
+                    {'name': 'orange', 'r': 255, 'g': 127, 'b': 39, 'dx': 3, 'dy': 3}
+                   ]
 
-                print("hee")
+                r,g,b = colors[category_type].r, colors[category_type].g, colors[category_type].b
+                dx,dy = colors[category_type].dx, colors[category_type].dy
 
-                cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
+                cv2.rectangle(image, (xmin, ymin), (xmax+dx, ymax+dy), (r,g,b), 2)
             results["debug_image"] = image
 
         return results
 
 
 def main():
-    m = TableRecognizer("model_11.pth")
+    m = TableRecognizer()
     import glob
     from tqdm import tqdm
 
