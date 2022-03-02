@@ -94,6 +94,7 @@ class TableRecognizer:
         print("loading model")
         self.device = torch.device(args.device)
         self.model, _, self.postprocessors = get_model(args, self.device)
+        print(self.model)
         self.model.eval()
 
         class_map = get_class_map()
