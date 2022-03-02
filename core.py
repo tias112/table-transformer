@@ -138,8 +138,8 @@ class TableRecognizer:
                     {'name': 'orange', 'r': 255, 'g': 127, 'b': 39, 'dx': 3, 'dy': 3}
                    ]
 
-                r,g,b = colors[category_type].r, colors[category_type].g, colors[category_type].b
-                dx,dy = colors[category_type].dx, colors[category_type].dy
+                r,g,b = colors[category_type]['r'], colors[category_type]['g'], colors[category_type]['b']
+                dx,dy = colors[category_type]['dx'], colors[category_type]['dy']
 
                 cv2.rectangle(image, (xmin, ymin), (xmax+dx, ymax+dy), (r,g,b), 2)
             results["debug_image"] = image
