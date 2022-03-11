@@ -123,6 +123,7 @@ class TableRecognizer:
 
         if debug is True:
             image = np.array(image)
+            result_objects = []
             for idx, score in enumerate(results["scores"].tolist()):
                 if score < thresh: continue
 
@@ -142,8 +143,9 @@ class TableRecognizer:
                 dx,dy = colors[category_type]['dx'], colors[category_type]['dy']
 
                 cv2.rectangle(image, (xmin, ymin), (xmax+dx, ymax+dy), (r,g,b), 2)
+                result_objects.append({'category_type': category_type, 'bbox': [xmin, ymin, xmax, ymax]})
             results["debug_image"] = image
-
+            results["debug_objects"] = result_objects
         return results
 
 
