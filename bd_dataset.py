@@ -81,7 +81,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
 
         for image_file in first_samples.keys():
             table_obj = first_samples[image_file]
-            img = self.padding(image_file, table_obj['bbox'], (35, 30, 20, 20))
+            img = self.padding(image_file, table_obj['bbox'], (35, 30, 30, 30))
             f.write(f"{image_file}\n")
 
             # cv2.imwrite(f"processed/{os.path.basename(image_path)}.jpg", output["debug_image"])
