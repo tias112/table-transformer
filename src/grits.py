@@ -761,6 +761,7 @@ def grits(args, model, dataset_test, device):
             linewidth = 1
             alpha = 0
             for word in page_tokens:
+                # true text boxes on predicted TSR
                 bbox = word['bbox']
                 rect = patches.Rectangle(bbox[:2], bbox[2]-bbox[0], bbox[3]-bbox[1], linewidth=1, 
                                          edgecolor='none',facecolor="orange", alpha=0.04)
@@ -770,6 +771,7 @@ def grits(args, model, dataset_test, device):
                 ax.add_patch(rect)         
             rescaled_bboxes = rescale_bboxes(torch.tensor(boxes[0], dtype=torch.float32), img_test.size)
             for bbox, label, score in zip(rescaled_bboxes, labels[0].tolist(), scores[0].tolist()):
+                # predicted boxes
                 bbox = bbox.cpu().numpy().tolist()
                 if not label > 5 and score > 0.5:
                     color, alpha, linewidth = get_bbox_decorations(label, score)
@@ -784,7 +786,8 @@ def grits(args, model, dataset_test, device):
             plt.show()
 
             fig,ax = plt.subplots(1)
-            ax.imshow(img_test, interpolation='lanczos')    
+            ax.imshow(img_test, interpolation='lanczos')
+            # true boxes of text (after object to cells) - picture 2
             for cell in true_cells:
                 bbox = cell['bbox']
                 rect = patches.Rectangle(bbox[:2], bbox[2]-bbox[0], bbox[3]-bbox[1], linewidth=1, 
@@ -817,7 +820,7 @@ def grits(args, model, dataset_test, device):
 
             fig,ax = plt.subplots(1)
             ax.imshow(img_test, interpolation='lanczos')
-
+            # true boxes of predicted cells (after object to cells) - picture 3
             for cell in pred_cells:
                 bbox = cell['bbox']
                 rect = patches.Rectangle(bbox[:2], bbox[2]-bbox[0], bbox[3]-bbox[1], linewidth=1, 

@@ -41,10 +41,10 @@ from table_datasets import (
 def get_class_map():
     class_map = {
         "table": 0,
-        "table column": 1,
-        "table row": 2,
-        "table column header": 3,
-        "table projected row header": 4,
+         "table column": 1, #red
+        "table row": 2, #blue
+        "table column header": 3, #magenta
+        "table projected row header": 4, #cyan
         "table spanning cell": 5,
         "no object": 6,
     }
