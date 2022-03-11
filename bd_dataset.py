@@ -4,7 +4,7 @@ import os
 import cv2
 import numpy as np
 import torch
-
+import easyocr
 
 def get_category_map():
     category_map = {
@@ -15,10 +15,12 @@ def get_category_map():
     return category_map
 
 
+# def createIndex():
+
 class BDTablesDataset(torch.utils.data.Dataset):
     def __init__(
             self,
-            root='./data/nc_ttv',
+            root='./data/nc_ttv/val',
             do_crop=True,
             do_padding=True,
             make_coco=False,
@@ -37,6 +39,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
         self.pad = 3
         self.root = root
         self.image_directory = os.path.join(root, "images")
+        self.image_processed = os.path.join(root, "processed") #"C:/temp/processed/"#
         self.category_map = get_category_map()
         with open(os.path.join(root, "val.json"), "r") as file:
             data = json.load(file)
@@ -83,17 +86,40 @@ class BDTablesDataset(torch.utils.data.Dataset):
 
             # cv2.imwrite(f"processed/{os.path.basename(image_path)}.jpg", output["debug_image"])
             img = np.array(img)
-            cv2.imwrite(f"data/nc_ttv/processed/{image_file}", img)
-            #print(cv2.imwrite(f"C:/temp/processed/{image_file}", img))
+            self.image_directory
+            # cv2.imwrite(f"processed/{image_file}.jpg", img)
+            print(cv2.imwrite(f"{self.image_processed}{image_file}", img))   #TODO: /data/nc_ttv/processed/
             # returns JSON object as
             # a dictionary
 
             # Closing file
         f.close()
 
+    def process_text(self, max_samples):
+
+        reader = easyocr.Reader(["en"], gpu=False)
+        first_samples = {k: self.table_objs[k] for k in list(self.table_objs)[:max_samples]}
+
+        for image_file in first_samples.keys():
+            img = os.path.join(self.image_processed, image_file)
+            if isinstance(img, str):
+                img = Image.open(img).convert("RGB")
+
+            epsilon = 0.001
+            result = reader.readtext(
+                image=np.asarray(img),
+                slope_ths=epsilon,
+                ycenter_ths=epsilon,
+                height_ths=epsilon,
+                width_ths=epsilon,
+                decoder="wordbeamsearch",
+                add_margin=0.15
+            )
+            print(result)
 
 if __name__ == "__main__":
     ds = BDTablesDataset(category_map=get_category_map(),
                          do_crop=True,
                          do_padding=True)
     ds.process_images(3)
+    ds.process_text(3)
