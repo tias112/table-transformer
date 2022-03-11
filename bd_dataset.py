@@ -88,7 +88,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
             img = np.array(img)
             self.image_directory
             # cv2.imwrite(f"processed/{image_file}.jpg", img)
-            print(cv2.imwrite(f"{self.image_processed}{image_file}", img))   #TODO: /data/nc_ttv/processed/
+            print(cv2.imwrite(f"{self.image_processed}/{image_file}", img))   #TODO: /data/nc_ttv/processed/
             # returns JSON object as
             # a dictionary
 
