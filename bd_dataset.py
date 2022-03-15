@@ -49,31 +49,42 @@ class BDTablesDataset(torch.utils.data.Dataset):
 
 
     #return bounding box of cropped table from original image
-    def get_cropped_bbox(self, filename):
+    def _get_cropped_bbox(self, filename):
         table_obj = self.table_objs[filename]
         return table_obj['cropped_bbox']
+        # return bounding box of cropped table from original image
+
+    def _get_padding_bbox(self, filename):
+        table_obj = self.table_objs[filename]
+        return table_obj['padding']
 
     # Cropped image of above dimension with small padding
     # (It will not change original image)
-    def padding(self, filename, bbox, padding_sizes):
+    def _do_extract_table_img(self, filename, bbox, padding_sizes):
         img = os.path.join(self.image_directory, filename)
         if isinstance(filename, str):
             img = Image.open(img).convert("RGB")
         table_bbox = bbox
-        if self.do_padding:
-            table_bbox = self.padding_bbox(bbox)
+
         if self.do_crop:
+            table_bbox = self._get_bbox_with_borders(bbox)
             img = img.crop(table_bbox)
+
         self.table_objs[filename].update({"cropped_bbox": table_bbox})
+
+        self.table_objs[filename].update({"padding": padding_sizes})
         # extend with white paddings
-        return ImageOps.expand(img, padding_sizes, (255, 255, 255))
+        if self.do_padding:
+            img = ImageOps.expand(img, padding_sizes, (255, 255, 255))
+
+        return img
 
     # keeping borders within cropped image
-    def padding_bbox(self, bbox):
+    def _get_bbox_with_borders(self, bbox):
         return bbox[0] - self.pad, bbox[1] - self.pad, bbox[0] + bbox[2] + 2 * self.pad, bbox[1] + bbox[
             3] + 2 * self.pad
 
-    def process_images(self, max_samples):
+    def _process_images(self, max_samples):
         # Iterating through the tables and cut
         # list
         f = open(os.path.join(self.root, "filelist.txt"), "w")
@@ -81,7 +92,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
 
         for image_file in first_samples.keys():
             table_obj = first_samples[image_file]
-            img = self.padding(image_file, table_obj['bbox'], (35, 30, 30, 30))
+            img = self._do_extract_table_img(image_file, table_obj['bbox'], (35, 30, 30, 30))
             f.write(f"{image_file}\n")
 
             # cv2.imwrite(f"processed/{os.path.basename(image_path)}.jpg", output["debug_image"])
@@ -95,7 +106,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
             # Closing file
         f.close()
 
-    def process_text(self, max_samples):
+    def _process_text(self, max_samples):
 
         reader = easyocr.Reader(["en"], gpu=False)
         first_samples = {k: self.table_objs[k] for k in list(self.table_objs)[:max_samples]}
@@ -107,13 +118,13 @@ class BDTablesDataset(torch.utils.data.Dataset):
 
             epsilon = 0.001
             result = reader.readtext(
-                image=np.asarray(img),
-                slope_ths=epsilon,
-                ycenter_ths=epsilon,
-                height_ths=epsilon,
-                width_ths=epsilon,
-                decoder="wordbeamsearch",
-                add_margin=0.15
+                image=np.asarray(img)
+             #   slope_ths=epsilon,
+            #    ycenter_ths=epsilon,
+            #    height_ths=epsilon,
+            #    width_ths=epsilon,
+#                decoder="wordbeamsearch"
+            #   add_margin=0.15
             )
             print(result)
 
@@ -121,5 +132,5 @@ if __name__ == "__main__":
     ds = BDTablesDataset(category_map=get_category_map(),
                          do_crop=True,
                          do_padding=True)
-    ds.process_images(3)
-    ds.process_text(3)
+    #ds._process_images(3)
+    ds._process_text(3)
