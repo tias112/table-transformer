@@ -5,6 +5,12 @@ import cv2
 import numpy as np
 import torch
 import easyocr
+import src.eval_utils as eval_utils
+import src.schema as m
+from typing import Any, Dict, Iterator, List, Optional, Tuple
+
+from src.text_flow import arrange_text
+from src.schema import TextToken
 
 def get_category_map():
     category_map = {
@@ -26,7 +32,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
             make_coco=False,
             bbox_data="val.json",
             image_extension=".png",
-            category_map=None,
+            category_map=None
     ):
         self.root = root
         self.do_crop = do_crop
@@ -40,6 +46,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
         self.root = root
         self.image_directory = os.path.join(root, "images")
         self.image_processed = os.path.join(root, "processed") #"C:/temp/processed/"#
+        self.words_directory = os.path.join(root, "words")
         self.category_map = get_category_map()
         with open(os.path.join(root, "val.json"), "r") as file:
             data = json.load(file)
@@ -97,14 +104,30 @@ class BDTablesDataset(torch.utils.data.Dataset):
 
             # cv2.imwrite(f"processed/{os.path.basename(image_path)}.jpg", output["debug_image"])
             img = np.array(img)
-            self.image_directory
+            if not os.path.exists(self.image_processed):
+                os.makedirs(self.image_processed)
             # cv2.imwrite(f"processed/{image_file}.jpg", img)
-            print(cv2.imwrite(f"{self.image_processed}/{image_file}", img))   #TODO: /data/nc_ttv/processed/
+            print(cv2.imwrite(f"{self.image_processed}/{image_file}", img))
             # returns JSON object as
             # a dictionary
 
             # Closing file
         f.close()
+
+    def _process_words(
+        self, words, image_file
+    ) -> List[m.TextToken]:
+        image_path = os.path.join(self.image_processed, image_file)
+
+        tokens = self.words_to_tokens(words)
+        raster_text = arrange_text(
+            tokens, image_path, self.words_directory
+        )
+        return raster_text
+
+    def words_to_tokens(self, words):
+        return [TextToken(bbox=tuple([float(word[0][0][0]), float(word[0][0][1]), float(word[0][2][0]), float(word[0][3][1])]), text=word[1]) for word in words]
+
 
     def _process_text(self, max_samples):
 
@@ -126,11 +149,16 @@ class BDTablesDataset(torch.utils.data.Dataset):
 #                decoder="wordbeamsearch"
             #   add_margin=0.15
             )
+            tokens = self._process_words(result, image_file)
+
             print(result)
 
+
 if __name__ == "__main__":
-    ds = BDTablesDataset(category_map=get_category_map(),
-                         do_crop=True,
-                         do_padding=True)
-    #ds._process_images(3)
-    ds._process_text(3)
+    ds = BDTablesDataset(
+        root="C:/temp/data/nc_ttv/val",
+         do_crop=True,
+         do_padding=True,
+        category_map=get_category_map())
+    ds._process_images(226)
+    ds._process_text(226)

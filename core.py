@@ -13,6 +13,7 @@ import cv2
 from PIL import Image
 import streamlit as st
 
+
 # fuck this line :)
 # reason 
 # File "/home/research/table-transformer/detr/engine.py", line 12, in <module>
@@ -23,6 +24,7 @@ sys.path.append("src")
 
 from engine import evaluate, train_one_epoch
 from models import build_model
+from grits import objects_to_cells
 import util.misc as utils
 import datasets.transforms as R
 
@@ -100,7 +102,7 @@ class TableRecognizer:
 
         self.normalize = R.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
-    def predict(self, image_path = None, debug=True, thresh=0.9):
+    def predict(self, image_path = None, page_tokens=None, debug=True, thresh=0.9):
         if image_path is None:
             image_path = "/data/pubtables1m/PubTables1M-Structure-PASCAL-VOC/images/PMC514496_table_0.jpg"  
 
@@ -112,10 +114,45 @@ class TableRecognizer:
 
         img_tensor = self.normalize(F.to_tensor(image))[0]
         img_tensor = torch.unsqueeze(img_tensor, 0).to(self.device)
-   
+
         outputs = None
         with torch.no_grad():
             outputs = self.model(img_tensor)
+
+        ############# from grits ##################
+
+        """
+          This function runs the GriTS proposed in the paper. We also have a debug
+          mode which let's you see the outputs of a model on the pdf pages.
+          """
+        structure_class_names = [
+            'table', 'table column', 'table row', 'table column header',
+            'table projected row header', 'table spanning cell', 'no object'
+        ]
+        structure_class_map = {k: v for v, k in enumerate(structure_class_names)}
+        structure_class_thresholds = {
+            "table": 0.5,
+            "table column": 0.5,
+            "table row": 0.5,
+            "table column header": 0.5,
+            "table projected row header": 0.5,
+            "table spanning cell": 0.5,
+            "no object": 10
+        }
+        boxes = outputs['pred_boxes']
+        m = outputs['pred_logits'].softmax(-1).max(-1)
+        scores = m.values
+        labels = m.indices
+        #rescaled_bboxes = rescale_bboxes(torch.tensor(boxes[0], dtype=torch.float32), img_test.size)
+        rescaled_bboxes = rescale_bboxes(boxes[0].cpu(), img_test.size)
+        pred_bboxes = [bbox.tolist() for bbox in rescaled_bboxes]
+        pred_labels = labels[0].tolist()
+        pred_scores = scores[0].tolist()
+        pred_table_structures, pred_cells, pred_confidence_score = objects_to_cells(pred_bboxes, pred_labels, pred_scores,
+                                                                                    page_tokens, structure_class_names,
+                                                                                    structure_class_thresholds, structure_class_map)
+
+        ############# from grits ##################
 
         image_size = torch.unsqueeze(torch.as_tensor([int(h), int(w)]), 0).to(self.device)
         results = self.postprocessors['bbox'](outputs, image_size)[0]
@@ -146,6 +183,8 @@ class TableRecognizer:
                 result_objects.append({'category_type': category_type, 'bbox': [xmin, ymin, xmax, ymax]})
             results["debug_image"] = image
             results["debug_objects"] = result_objects
+            results["pred_table_structures"] = pred_table_structures
+            results["pred_cells"] = pred_cells
         return results
 
 
