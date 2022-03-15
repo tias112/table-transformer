@@ -346,24 +346,24 @@ def arrange_text(
     (w,h) = draw_bboxes2(lines, image_path,save_path, "lines")
 #        save_to_file(lines, "lines")
 
-    gaps = find_gap(lines)
-    if verbose:
-        draw_bboxes2(gaps, image_path, save_path,"gaps")
+    #gaps = find_gap(lines)
+    #if verbose:
+    #    draw_bboxes2(gaps, image_path, save_path,"gaps")
     #    save_to_file(gaps, "gaps")
 
-    paragraphs = find_paragraphs(gaps, h, w)
-    if verbose:
-        draw_bboxes2(paragraphs, image_path,save_path, "paragraphs")
+    #paragraphs = find_paragraphs(gaps, h, w)
+    #if verbose:
+     #   draw_bboxes2(paragraphs, image_path,save_path, "paragraphs")
      #   save_to_file(paragraphs,  "paragraphs")
 
-    nested_paragraphs = get_nested_paragraphs(tokens, paragraphs)
-    if verbose:
-        draw_bboxes2(nested_paragraphs, image_path,save_path, "nested_paragraphs")
+    #nested_paragraphs = get_nested_paragraphs(tokens, paragraphs)
+    #if verbose:
+    #    draw_bboxes2(nested_paragraphs, image_path,save_path, "nested_paragraphs")
     #    save_to_file(nested_paragraphs, "nested_paragraphs")
 
-    result = get_ordered_text(nested_paragraphs)
-    if verbose:
-        draw_bboxes2(result, image_path,save_path, "result")
+    #result = get_ordered_text(nested_paragraphs)
+    #if verbose:
+     #   draw_bboxes2(result, image_path,save_path, "result")
      #   save_to_file(result,  "result")
 
     return import_to_text_tokens(lines)
