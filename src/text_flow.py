@@ -9,7 +9,7 @@ from typing import Any, List, Optional, Tuple
 
 #from pdfplumber.display import COLORS
 #from pdfplumber.page import Page as PlumberPage
-from pdfplumber.utils import decimalize
+#from pdfplumber.utils import decimalize
 from pydantic import BaseModel
 
 #from src.config import settings
