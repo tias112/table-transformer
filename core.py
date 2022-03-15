@@ -54,13 +54,13 @@ def get_class_map():
 
 def get_colors_map():
     colors_map = [
-        {'name': 'brown', 'category_name': 'table', 'r': 128, 'g': 64, 'b': 64, 'dx': 3, 'dy': 3},
-        {'name': 'red', 'category_name': 'table column', 'r': 255, 'g': 0, 'b': 0, 'dx': 4, 'dy': 4},
-        {'name': 'blue', 'category_name': 'table row', 'r': 0, 'g': 0, 'b': 255, 'dx': 3, 'dy': 3},
-        {'name': 'magenta', 'category_name': 'table column header', 'r': 255, 'g': 0, 'b': 255, 'dx': 1, 'dy': 1},
-        {'name': 'cyan', 'category_name': 'table projected row header', 'r': 0, 'g': 255, 'b': 255, 'dx': 2, 'dy': 2},
-        {'name': 'green', 'category_name': 'table spanning cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3, 'dy': 3},
-        {'name': 'orange', 'category_name': 'other', 'r': 255, 'g': 127, 'b': 39, 'dx': 3, 'dy': 3}
+        {'name': 'brown', 'label': 0, 'category_name': 'table', 'r': 128, 'g': 64, 'b': 64, 'dx': 3, 'dy': 3},
+        {'name': 'red', 'label': 1, 'category_name': 'table column', 'r': 255, 'g': 0, 'b': 0, 'dx': 4, 'dy': 4},
+        {'name': 'blue', 'label': 2, 'category_name': 'table row', 'r': 0, 'g': 0, 'b': 255, 'dx': 3, 'dy': 3},
+        {'name': 'magenta', 'label': 3, 'category_name': 'table column header', 'r': 255, 'g': 0, 'b': 255, 'dx': 1, 'dy': 1},
+        {'name': 'cyan', 'label': 4, 'category_name': 'table projected row header', 'r': 0, 'g': 255, 'b': 255, 'dx': 2, 'dy': 2},
+        {'name': 'green', 'label': 5, 'category_name': 'table spanning cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3, 'dy': 3},
+        {'name': 'orange', 'label': 6, 'category_name': 'other', 'r': 255, 'g': 127, 'b': 39, 'dx': 3, 'dy': 3}
     ]
     return colors_map
 
@@ -126,14 +126,14 @@ class TableRecognizer:
 
     def origin_img_cell_xy(self, pred_cells, crop_box, padding_box):
         for cell in pred_cells:
-            cell['bbox'] = list(np.array(cell['bbox']) + np.array(cropped_bbox) - np.array(padding))
+            cell['bbox'] = list(np.array(cell['bbox']) + np.array(crop_box) - np.array(padding_box))
             for span in cell['spans']:
-                span['bbox'] = list(np.array(span['bbox']) + np.array(cropped_bbox) - np.array(padding))
+                span['bbox'] = list(np.array(span['bbox']) + np.array(crop_box) - np.array(padding_box))
         return pred_cells
 
     def origin_img_table_xy(self, items, crop_box, padding_box):
         for item in items:
-            item['bbox'] = list(np.array(item['bbox']) + np.array(cropped_bbox) - np.array(padding))
+            item['bbox'] = list(np.array(item['bbox']) + np.array(crop_box) - np.array(padding_box))
         return items
 
     def objects_to_grid_cells(self, outputs):
