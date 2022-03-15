@@ -155,7 +155,7 @@ class TableRecognizer:
         scores = m.values
         labels = m.indices
         #rescaled_bboxes = rescale_bboxes(torch.tensor(boxes[0], dtype=torch.float32), img_test.size)
-        rescaled_bboxes = self.rescale_bboxes(boxes[0].cpu(), img_test.size)
+        rescaled_bboxes = self.rescale_bboxes(boxes[0].cpu(), image.size)
         pred_bboxes = [bbox.tolist() for bbox in rescaled_bboxes]
         pred_labels = labels[0].tolist()
         pred_scores = scores[0].tolist()
