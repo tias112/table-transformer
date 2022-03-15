@@ -102,6 +102,17 @@ class TableRecognizer:
 
         self.normalize = R.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
+    def rescale_bboxes(out_bbox, size):
+        img_w, img_h = size
+        b = box_cxcywh_to_xyxy(out_bbox)
+        b = b * torch.tensor([img_w, img_h, img_w, img_h], dtype=torch.float32)
+        return b
+
+    def box_cxcywh_to_xyxy(x):
+        x_c, y_c, w, h = x.unbind(1)
+        b = [(x_c - 0.5 * w), (y_c - 0.5 * h), (x_c + 0.5 * w), (y_c + 0.5 * h)]
+        return torch.stack(b, dim=1)
+
     def predict(self, image_path = None, page_tokens=None, debug=True, thresh=0.9):
         if image_path is None:
             image_path = "/data/pubtables1m/PubTables1M-Structure-PASCAL-VOC/images/PMC514496_table_0.jpg"  
