@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
-from pdfplumber.page import Page as PlumberPage
+#from pdfplumber.page import Page as PlumberPage
 from PIL.Image import Image as PImage
 from pydantic import BaseModel, Field, validator
 
@@ -131,23 +131,6 @@ class PageSize(BaseModel):
     width: float
     height: float
 
-
-class Page(BaseModel):
-    """Describe page"""
-
-    size: PageSize
-    page_num: int
-    objs: List[Union[Line, Rectangle, TextToken, Image, Curve]]
-
-    @classmethod
-    def parse_plumber(cls, plumber_page: PlumberPage) -> Page:
-        return cls(
-            size=PageSize(
-                width=plumber_page.width, height=plumber_page.height
-            ),
-            page_num=plumber_page.page_number,
-            objs=[],
-        )
 
 
 class RequestObjectTypes(str, Enum):

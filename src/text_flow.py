@@ -8,7 +8,7 @@ from copy import deepcopy
 from typing import Any, List, Optional, Tuple
 
 #from pdfplumber.display import COLORS
-from pdfplumber.page import Page as PlumberPage
+#from pdfplumber.page import Page as PlumberPage
 from pdfplumber.utils import decimalize
 from pydantic import BaseModel
 
