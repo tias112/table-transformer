@@ -102,13 +102,13 @@ class TableRecognizer:
 
         self.normalize = R.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
-    def rescale_bboxes(out_bbox, size):
+    def rescale_bboxes(self,out_bbox, size):
         img_w, img_h = size
-        b = box_cxcywh_to_xyxy(out_bbox)
+        b = self.box_cxcywh_to_xyxy(out_bbox)
         b = b * torch.tensor([img_w, img_h, img_w, img_h], dtype=torch.float32)
         return b
 
-    def box_cxcywh_to_xyxy(x):
+    def box_cxcywh_to_xyxy(self,x):
         x_c, y_c, w, h = x.unbind(1)
         b = [(x_c - 0.5 * w), (y_c - 0.5 * h), (x_c + 0.5 * w), (y_c + 0.5 * h)]
         return torch.stack(b, dim=1)
@@ -155,7 +155,7 @@ class TableRecognizer:
         scores = m.values
         labels = m.indices
         #rescaled_bboxes = rescale_bboxes(torch.tensor(boxes[0], dtype=torch.float32), img_test.size)
-        rescaled_bboxes = rescale_bboxes(boxes[0].cpu(), img_test.size)
+        rescaled_bboxes = self.rescale_bboxes(boxes[0].cpu(), img_test.size)
         pred_bboxes = [bbox.tolist() for bbox in rescaled_bboxes]
         pred_labels = labels[0].tolist()
         pred_scores = scores[0].tolist()
