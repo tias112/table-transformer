@@ -172,7 +172,7 @@ class TableRecognizer:
                     if self.save_debug_images:
                         cv2.imwrite(f"{self.debug_images_dir}/{img_filename}", debug_image)
 
-                    self.result_objs.append(obj_details)
+                    result_objs.append(obj_details)
             result = {"objs": result_objs,
                       "categories": self.class_list[:-3]
                       }
