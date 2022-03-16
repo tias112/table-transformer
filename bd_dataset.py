@@ -59,13 +59,15 @@ class BDTablesDataset(torch.utils.data.Dataset):
     def _get_cropped_bbox(self, filename):
         if filename in self.table_objs.keys():
             table_obj = self.table_objs[filename]
-            return table_obj['cropped_bbox']
+            if 'cropped_bbox' in table_obj.keys():
+                return table_obj['cropped_bbox']
         return [0, 0, 0, 0]
 
     def _get_padding_bbox(self, filename):
         if filename in self.table_objs.keys():
             table_obj = self.table_objs[filename]
-            return table_obj['padding']
+            if 'padding' in table_obj.keys():
+                return table_obj['padding']
         return [0, 0, 0, 0]
 
     # Cropped image of above dimension with small padding
