@@ -134,8 +134,9 @@ class TableRecognizer:
         self.image_extension = image_extension
         self.class_list = [{'label': c['label'], 'name': c['category_name']} for c in get_colors_map()]
 
-        if self.save_debug_images and not os.path.exists(debug_images_dir):
-            os.makedirs(debug_images_dir)
+        self.debug_images_dir = f"{os.path.split(os.path.abspath(self.images_dir))[0]}/debug"
+        if self.save_debug_images and not os.path.exists(self.debug_images_dir):
+            os.makedirs(self.debug_images_dir)
 
         try:
             with open(os.path.join(self.root, "filelist.txt"), 'r') as file:
@@ -148,9 +149,6 @@ class TableRecognizer:
 
     def process(self, max_count):
         result_objs = []
-        debug_images_dir = f"{os.path.split(os.path.abspath(self.images_dir))[0]}/debug"
-        if self.save_debug_images and not os.path.exists(debug_images_dir):
-            os.makedirs(debug_images_dir)
         if self.export_objects:
             for image_id, image_path in enumerate(tqdm(glob.glob(f"{self.images_dir}/*.png"), total=max_count)):
                 img_filename = os.path.basename(image_path)
@@ -171,7 +169,7 @@ class TableRecognizer:
 
                     }
                     if self.save_debug_images:
-                        cv2.imwrite(f"{debug_images_dir}/{img_filename}", debug_image)
+                        cv2.imwrite(f"{self.debug_images_dir}/{img_filename}", debug_image)
 
                     self.result_objs.append(obj_details)
             result = {"objs": result_objs,
