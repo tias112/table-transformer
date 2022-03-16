@@ -132,6 +132,7 @@ class TableRecognizer:
         self.original_xy_offset = original_xy_offset
         self.ds = ds
         self.image_extension = image_extension
+        self.root = root
         self.class_list = [{'label': c['label'], 'name': c['category_name']} for c in get_colors_map()]
 
         self.debug_images_dir = f"{os.path.split(os.path.abspath(self.images_dir))[0]}/debug"
