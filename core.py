@@ -185,6 +185,7 @@ class TableRecognizer:
 
     def get_objects(self, image_path, crop_box, padding_box):
         img_filename = os.path.basename(image_path)
+        table_words_dir = f"{self.root}/words/lines/"
         img_words_filepath = os.path.join(table_words_dir, img_filename.replace(".png", "_words.json"))
         with open(img_words_filepath, 'r') as f:
             page_tokens = json.load(f)
