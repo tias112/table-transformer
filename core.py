@@ -268,7 +268,7 @@ class TableRecognizer:
             item['bbox'] = list(np.array(item['bbox']) + np.array(crop_box) - np.array(padding_box))
         return items
 
-    def objects_to_grid_cells(self, outputs, page_tokens):
+    def objects_to_grid_cells(self, outputs, page_tokens, image):
         """     from grits
                  This function runs the GriTS proposed in the paper. We also have a debug
                  mode which let's you see the outputs of a model on the pdf pages.
@@ -321,7 +321,7 @@ class TableRecognizer:
         with torch.no_grad():
             outputs = self.model(img_tensor)
 
-        pred_table_structures, pred_cells, pred_confidence_score = self.objects_to_grid_cells(outputs, page_tokens)
+        pred_table_structures, pred_cells, pred_confidence_score = self.objects_to_grid_cells(outputs, page_tokens, image)
 
         image_size = torch.unsqueeze(torch.as_tensor([int(h), int(w)]), 0).to(self.device)
         results = self.postprocessors['bbox'](outputs, image_size)[0]
