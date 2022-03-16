@@ -104,7 +104,7 @@ class TableRecognizer:
                  image_extension=".png",
                  save_debug_images=False,
                  original_xy_offset=True,
-                 ds=BDTablesDataset()):
+                 ds=None):
         args = Args
 
         assert os.path.exists(checkpoint_path), checkpoint_path

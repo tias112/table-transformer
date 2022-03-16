@@ -357,7 +357,7 @@ class PDFTablesDataset(torch.utils.data.Dataset):
                            'iscrowd': 0,
                            'bbox': [bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]],
                            'category_id': label,
-                           'image_id': x1,
+                           'image_id': image_id,
                            'id': ann_id,
                            'ignore': 0,
                            'segmentation': []}
