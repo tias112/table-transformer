@@ -17,3 +17,5 @@ pycocotools
 easyocr
 opencv-python-headless==4.5.4.60
 streamlit
+pydantic
+uvicorn

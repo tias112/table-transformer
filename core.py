@@ -12,12 +12,10 @@ import torchvision.transforms.functional as F
 import cv2
 from PIL import Image
 import streamlit as st
+import glob
+from tqdm import tqdm
+from bd_dataset import BDTablesDataset
 
-# fuck this line :)
-# reason 
-# File "/home/research/table-transformer/detr/engine.py", line 12, in <module>
-#     import util.misc as utils
-#     ModuleNotFoundError: No module named 'util'
 sys.path.append("detr")
 sys.path.append("src")
 
@@ -57,10 +55,19 @@ def get_colors_map():
         {'name': 'brown', 'label': 0, 'category_name': 'table', 'r': 128, 'g': 64, 'b': 64, 'dx': 3, 'dy': 3},
         {'name': 'red', 'label': 1, 'category_name': 'table column', 'r': 255, 'g': 0, 'b': 0, 'dx': 4, 'dy': 4},
         {'name': 'blue', 'label': 2, 'category_name': 'table row', 'r': 0, 'g': 0, 'b': 255, 'dx': 3, 'dy': 3},
-        {'name': 'magenta', 'label': 3, 'category_name': 'table column header', 'r': 255, 'g': 0, 'b': 255, 'dx': 1, 'dy': 1},
-        {'name': 'cyan', 'label': 4, 'category_name': 'table projected row header', 'r': 0, 'g': 255, 'b': 255, 'dx': 2, 'dy': 2},
-        {'name': 'green', 'label': 5, 'category_name': 'table spanning cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3, 'dy': 3},
-        {'name': 'orange', 'label': 6, 'category_name': 'other', 'r': 255, 'g': 127, 'b': 39, 'dx': 3, 'dy': 3}
+        {'name': 'magenta', 'label': 3, 'category_name': 'table column header', 'r': 255, 'g': 0, 'b': 255, 'dx': 1,
+         'dy': 1},
+        {'name': 'cyan', 'label': 4, 'category_name': 'table projected row header', 'r': 0, 'g': 255, 'b': 255, 'dx': 2,
+         'dy': 2},
+        {'name': 'green', 'label': 5, 'category_name': 'table spanning cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3,
+         'dy': 3},
+        {'name': 'orange', 'label': 6, 'category_name': 'other', 'r': 255, 'g': 127, 'b': 39, 'dx': 3, 'dy': 3},
+        {'name': 'green', 'label': 7, 'category_name': 'header cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3,
+         'dy': 3},
+        {'name': 'green', 'label': 8, 'category_name': 'subheader cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3,
+         'dy': 3},
+        {'name': 'green', 'label': 9, 'category_name': 'cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3,
+         'dy': 3},
     ]
     return colors_map
 
@@ -89,7 +96,15 @@ def get_model(args, device):
 
 # def main():
 class TableRecognizer:
-    def __init__(self, checkpoint_path):
+    def __init__(self, checkpoint_path,
+                 make_coco=False,
+                 export_objects=True,
+                 root=None,
+                 images_dir="processed",
+                 image_extension=".png",
+                 save_debug_images=False,
+                 original_xy_offset=True,
+                 ds=BDTablesDataset()):
         args = Args
 
         assert os.path.exists(checkpoint_path), checkpoint_path
@@ -108,10 +123,125 @@ class TableRecognizer:
         self.device = torch.device(args.device)
         self.model, _, self.postprocessors = get_model(args, self.device)
         self.model.eval()
-
-        class_map = get_class_map()
-
+        self.make_coco = make_coco
+        self.export_objects = export_objects
+        # class_map = get_class_map()
+        self.images_dir = os.path.join(root, images_dir)
         self.normalize = R.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        self.save_debug_images = save_debug_images
+        self.original_xy_offset = original_xy_offset
+        self.ds = ds
+        self.image_extension = image_extension
+        self.class_list = [{'label': c['label'], 'name': c['category_name']} for c in get_colors_map()]
+
+        if self.save_debug_images and not os.path.exists(debug_images_dir):
+            os.makedirs(debug_images_dir)
+
+        try:
+            with open(os.path.join(self.root, "filelist.txt"), 'r') as file:
+                lines = file.readlines()
+        except:
+            lines = []
+        png_page_ids = set([f for f in lines if f.strip().endswith(self.image_extension)])
+        file_list = set([f for f in os.listdir(self.images_dir) if f.strip().endswith(self.image_extension)])
+        self.page_ids = list(file_list.union(png_page_ids))
+
+    def process(self, max_count):
+        result_objs = []
+        debug_images_dir = f"{os.path.split(os.path.abspath(self.images_dir))[0]}/debug"
+        if self.save_debug_images and not os.path.exists(debug_images_dir):
+            os.makedirs(debug_images_dir)
+        if self.export_objects:
+            for image_id, image_path in enumerate(tqdm(glob.glob(f"{self.images_dir}/*.png"), total=max_count)):
+                img_filename = os.path.basename(image_path)
+                crop_box = self.ds._get_cropped_bbox(img_filename)
+                padding_box = self.ds._get_padding_bbox(img_filename)
+
+                rows, cols, cells, debug_image = self.get_objects(image_path, crop_box, padding_box)
+                if self.export_objects:
+                    obj_details = {
+                        "original_file": img_filename,
+                        "cropped_bbox": crop_box,
+                        "padding": padding_box,
+                        "cells_structure": cells,
+                        "table_structure": {
+                            "rows": rows,
+                            "columns": cols
+                        }
+
+                    }
+                    if self.save_debug_images:
+                        cv2.imwrite(f"{debug_images_dir}/{img_filename}", debug_image)
+
+                    self.result_objs.append(obj_details)
+            result = {"objs": result_objs,
+                      "categories": self.class_list[:-3]
+                      }
+            jsonString = json.dumps(result)
+            jsonFile = open("output.json", "w")
+            jsonFile.write(jsonString)
+            jsonFile.close()
+
+        if self.make_coco:
+            self.process_coco(max_count)
+
+    def get_objects(self, image_path, crop_box, padding_box):
+        img_filename = os.path.basename(image_path)
+        img_words_filepath = os.path.join(table_words_dir, img_filename.replace(".png", "_words.json"))
+        with open(img_words_filepath, 'r') as f:
+            page_tokens = json.load(f)
+        output = self.predict(image_path, page_tokens)
+        rows = output["pred_table_structures"]["rows"]
+        cols = output["pred_table_structures"]["columns"]
+        cells = output["pred_cells"]
+        if self.original_xy_offset:
+            rows = self.origin_img_table_xy(rows, crop_box, padding_box)
+            cols = self.origin_img_table_xy(cols, crop_box, padding_box)
+            cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
+        return rows, cols, cells, output["debug_image"]
+
+    def process_coco(self, max_count):
+        # for coco
+        self.dataset = {}
+        self.dataset['images'] = [{'id': idx, 'file_name': page_id} for idx, page_id in enumerate(self.page_ids[:max_count])]
+        self.dataset['annotations'] = []
+        ann_id = 0
+        for image_id, page_id in enumerate(self.page_ids[:max_count]):
+            # Reduce class set
+            # keep_indices = [idx for idx, label in enumerate(labels) if label in self.class_set]
+            bboxes = [cell['bbox'] for cell in cells].append(
+                [row['bbox'] for row in rows]
+            ).append([col['bbox'] for col in cols])
+
+            labels = [cell_label(cell['header'], cell['subcell'], cell['subheader']) for cell in cells].append(
+                [row['label'] for row in rows]
+            ).append([col['label'] for col in cols])
+
+            for bbox, label in zip(bboxes, labels):
+                ann = {'area': (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]),
+                       'iscrowd': 0,
+                       'bbox': [bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]],
+                       'category_id': label,
+                       'image_id': image_id,
+                       'id': ann_id,
+                       'ignore': 0,
+                       'segmentation': []}
+                self.dataset['annotations'].append(ann)
+                ann_id += 1
+            self.dataset['categories'] = [{'id': idx} for idx in self.class_list]
+
+        jsonString = json.dumps(self.dataset)
+        jsonFile = open("coco_output.json", "w")
+        jsonFile.write(jsonString)
+        jsonFile.close()
+
+    def cell_label(self, header=False, subcell=False, subheader=False):
+        if header:
+            return 7
+        if subheader:
+            return 8
+        if subcell:
+            return 9
 
     def rescale_bboxes(self, out_bbox, size):
         img_w, img_h = size
@@ -136,7 +266,7 @@ class TableRecognizer:
             item['bbox'] = list(np.array(item['bbox']) + np.array(crop_box) - np.array(padding_box))
         return items
 
-    def objects_to_grid_cells(self, outputs):
+    def objects_to_grid_cells(self, outputs, page_tokens):
         """     from grits
                  This function runs the GriTS proposed in the paper. We also have a debug
                  mode which let's you see the outputs of a model on the pdf pages.
@@ -160,7 +290,7 @@ class TableRecognizer:
         scores = m.values
         labels = m.indices
         # rescaled_bboxes = rescale_bboxes(torch.tensor(boxes[0], dtype=torch.float32), img_test.size)
-        rescaled_bboxes = self.rescale_bboxes(boxes[0].cpu(), image.size)  # TODO validate
+        rescaled_bboxes = self.rescale_bboxes(boxes[0].cpu(), image.size)
         pred_bboxes = [bbox.tolist() for bbox in rescaled_bboxes]
         pred_labels = labels[0].tolist()
         pred_scores = scores[0].tolist()
@@ -189,7 +319,7 @@ class TableRecognizer:
         with torch.no_grad():
             outputs = self.model(img_tensor)
 
-        pred_table_structures, pred_cells, pred_confidence_score = self.objects_to_grid_cells(outputs)
+        pred_table_structures, pred_cells, pred_confidence_score = self.objects_to_grid_cells(outputs, page_tokens)
 
         image_size = torch.unsqueeze(torch.as_tensor([int(h), int(w)]), 0).to(self.device)
         results = self.postprocessors['bbox'](outputs, image_size)[0]
