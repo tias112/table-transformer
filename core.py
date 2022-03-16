@@ -188,8 +188,10 @@ class TableRecognizer:
         img_filename = os.path.basename(image_path)
         table_words_dir = f"{self.root}/words/lines/"
         img_words_filepath = os.path.join(table_words_dir, img_filename.replace(".png", "_words.json"))
-        with open(img_words_filepath, 'r') as f:
-            page_tokens = json.load(f)
+        page_tokens = []
+        if os.path.exists(img_words_filepath):
+            with open(img_words_filepath, 'r') as f:
+                page_tokens = json.load(f)
         output = self.predict(image_path, page_tokens)
         rows = output["pred_table_structures"]["rows"]
         cols = output["pred_table_structures"]["columns"]
