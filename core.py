@@ -142,7 +142,7 @@ class TableRecognizer:
 
         try:
             with open(os.path.join(self.root, "filelist.txt"), 'r') as file:
-                lines = file.readlines()
+                lines = [line.rstrip('\n') for line in file.readlines()]
         except:
             lines = []
         png_page_ids = set([f for f in lines if f.strip().endswith(self.image_extension)])
