@@ -210,6 +210,13 @@ class TableRecognizer:
         self.dataset['annotations'] = []
         ann_id = 0
         for image_id, page_id in enumerate(self.page_ids[:max_count]):
+            img_filename = page_id
+            crop_box = self.ds._get_cropped_bbox(img_filename)
+            padding_box = self.ds._get_padding_bbox(img_filename)
+            image_path = os.path.join(self.images_dir, img_filename)
+
+            rows, cols, cells, _ = self.get_objects(image_path, crop_box, padding_box)
+
             # Reduce class set
             # keep_indices = [idx for idx, label in enumerate(labels) if label in self.class_set]
             bboxes = [cell['bbox'] for cell in cells].append(
