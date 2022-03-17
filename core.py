@@ -217,6 +217,13 @@ class TableRecognizer:
         self.dataset = {}
         self.dataset['images'] = [{'id': idx, 'file_name': page_id} for idx, page_id in enumerate(self.page_ids[:max_count])]
         self.dataset['annotations'] = []
+        self.dataset["info"] = {
+            "year": "2022",
+            "version": "1.0",
+            "description": "Exported from Table Structure recognizer",
+            "url": "https://github.com/tias112/table-transformer",
+            "date_created": "2022-03-17T09:48:27"
+        }
         ann_id = 0
         for image_id, page_id in enumerate(self.page_ids[:max_count]):
             img_filename = page_id
