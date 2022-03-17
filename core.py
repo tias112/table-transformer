@@ -196,7 +196,6 @@ class TableRecognizer:
             with open(img_words_filepath, 'r') as f:
                 page_tokens = json.load(f)
         output = self.predict(image_path, page_tokens)
-        print(output)
         rows = output["pred_table_structures"]["rows"]
         cols = output["pred_table_structures"]["columns"]
         cells = output["pred_cells"]
@@ -211,7 +210,6 @@ class TableRecognizer:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
             cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
-        print(rows, cols, cells)
         return rows, cols, cells, output["debug_image"]
 
     def process_coco(self, max_count):
@@ -222,6 +220,7 @@ class TableRecognizer:
         ann_id = 0
         for image_id, page_id in enumerate(self.page_ids[:max_count]):
             img_filename = page_id
+            print(img_filename)
             crop_box = self.ds._get_cropped_bbox(img_filename)
             padding_box = self.ds._get_padding_bbox(img_filename)
             image_path = os.path.join(self.images_dir, img_filename)
