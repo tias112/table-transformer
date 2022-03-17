@@ -197,6 +197,12 @@ class TableRecognizer:
         rows = output["pred_table_structures"]["rows"]
         cols = output["pred_table_structures"]["columns"]
         cells = output["pred_cells"]
+        if cells is None:
+            cells = []
+        if rows is None:
+            rows = []
+        if cols is None:
+            rows = []
         if self.original_xy_offset:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
