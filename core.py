@@ -67,8 +67,10 @@ def get_colors_map():
          'dy': 3},
         {'name': 'green', 'label': 8, 'category_name': 'subheader cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3,
          'dy': 3},
-        {'name': 'green', 'label': 9, 'category_name': 'cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3,
+        {'name': 'green', 'label': 9, 'category_name': 'sub cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3,
          'dy': 3},
+        {'name': 'green', 'label': 10, 'category_name': 'cell', 'r': 0, 'g': 255, 'b': 0, 'dx': 3,
+         'dy': 3}
     ]
     return colors_map
 
@@ -232,7 +234,7 @@ class TableRecognizer:
             bboxes.extend([row['bbox'] for row in rows])
             bboxes.extend([col['bbox'] for col in cols])
 
-            labels = [self.cell_label(cell['header'], cell['subcell'], cell['subheader']) for cell in cells]
+            labels = [self.cell_label(cell) for cell in cells]
             labels.extend([row['label'] for row in rows])
             labels.extend([col['label'] for col in cols])
 
@@ -254,13 +256,14 @@ class TableRecognizer:
         jsonFile.write(jsonString)
         jsonFile.close()
 
-    def cell_label(self, header=False, subcell=False, subheader=False):
-        if header:
+    def cell_label(self, cell):
+        if 'header' in cell.keys() and cell['header'] :
             return 7
-        if subheader:
+        if 'subheader' in cell.keys() and cell['subheader']:
             return 8
-        if subcell:
+        if 'subcell' in cell.keys() and cell['subcell']:
             return 9
+        return 10
 
     def rescale_bboxes(self, out_bbox, size):
         img_w, img_h = size
