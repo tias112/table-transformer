@@ -228,13 +228,13 @@ class TableRecognizer:
 
             # Reduce class set
             # keep_indices = [idx for idx, label in enumerate(labels) if label in self.class_set]
-            bboxes = [cell['bbox'] for cell in cells].append(
-                [row['bbox'] for row in rows]
-            ).append([col['bbox'] for col in cols])
+            bboxes = [cell['bbox'] for cell in cells]
+            bboxes.extend([row['bbox'] for row in rows])
+            bboxes.extend([col['bbox'] for col in cols])
 
-            labels = [self.cell_label(cell['header'], cell['subcell'], cell['subheader']) for cell in cells].append(
-                [row['label'] for row in rows]
-            ).append([col['label'] for col in cols])
+            labels = [self.cell_label(cell['header'], cell['subcell'], cell['subheader']) for cell in cells]
+            labels.extend([row['label'] for row in rows])
+            labels.extend([col['label'] for col in cols])
 
             for bbox, label in zip(bboxes, labels):
                 ann = {'area': (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]),
