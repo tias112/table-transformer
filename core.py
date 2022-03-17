@@ -194,6 +194,7 @@ class TableRecognizer:
             with open(img_words_filepath, 'r') as f:
                 page_tokens = json.load(f)
         output = self.predict(image_path, page_tokens)
+        print(output)
         rows = output["pred_table_structures"]["rows"]
         cols = output["pred_table_structures"]["columns"]
         cells = output["pred_cells"]
@@ -203,10 +204,12 @@ class TableRecognizer:
             rows = []
         if cols is None:
             rows = []
+        print(rows,cols,cells)
         if self.original_xy_offset:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
             cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
+        print(rows, cols, cells)
         return rows, cols, cells, output["debug_image"]
 
     def process_coco(self, max_count):
@@ -229,7 +232,7 @@ class TableRecognizer:
                 [row['bbox'] for row in rows]
             ).append([col['bbox'] for col in cols])
 
-            labels = [cell_label(cell['header'], cell['subcell'], cell['subheader']) for cell in cells].append(
+            labels = [self.cell_label(cell['header'], cell['subcell'], cell['subheader']) for cell in cells].append(
                 [row['label'] for row in rows]
             ).append([col['label'] for col in cols])
 
