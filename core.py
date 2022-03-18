@@ -23,6 +23,7 @@ sys.path.append("src")
 from engine import evaluate, train_one_epoch
 from models import build_model
 from grits import objects_to_cells
+
 import util.misc as utils
 import datasets.transforms as R
 
@@ -105,15 +106,20 @@ class TableRecognizer:
                  root=None,
                  images_dir="processed",
                  image_extension=".png",
+                 config_file="detection_config.json",
+                 data_type="structure",
                  save_debug_images=False,
                  original_xy_offset=True,
                  ds=None):
         args = Args
 
         assert os.path.exists(checkpoint_path), checkpoint_path
+        config_args = json.load(open(config_file, 'rb'))
+        #config_args.update(cmd_args)
+        args = type('Args', (object,), config_args)
+        args.data_type = data_type
         print(args.__dict__)
         print("-" * 100)
-
         args.model_load_path = checkpoint_path
 
         # fix the seed for reproducibility
