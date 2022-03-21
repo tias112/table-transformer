@@ -218,7 +218,7 @@ class TableRecognizer:
             rows = []
         tables = []
         if self.data_type == 'detection':
-            tables = [obj for obj in results["debug_objects"] if obj['label'] in set(self.class_list)]
+            tables = [obj for obj in output["debug_objects"] if obj['label'] in set(self.class_list)]
         # print(rows,cols,cells)
         if self.original_xy_offset:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
