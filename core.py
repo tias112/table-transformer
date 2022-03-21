@@ -39,16 +39,19 @@ from table_datasets import (
 )
 
 
-def get_class_map():
-    class_map = {
-        "table": 0,
-        "table column": 1,  # red
-        "table row": 2,  # blue
-        "table column header": 3,  # magenta
-        "table projected row header": 4,  # cyan
-        "table spanning cell": 5,
-        "no object": 6,
-    }
+def get_class_map(data_type):
+    if data_type == 'structure':
+        class_map = {
+            'table': 0,
+            'table column': 1,
+            'table row': 2,
+            'table column header': 3,
+            'table projected row header': 4,
+            'table spanning cell': 5,
+            'no object': 6
+        }
+    else:
+        class_map = {'table': 0, 'table rotated': 1, 'no object': 2}
     return class_map
 
 
@@ -106,7 +109,7 @@ class TableRecognizer:
                  root=None,
                  images_dir="processed",
                  image_extension=".png",
-                 config_file="detection_config.json",
+                 config_file="structure_config.json",
                  data_type="structure",
                  save_debug_images=False,
                  original_xy_offset=True,
@@ -115,7 +118,7 @@ class TableRecognizer:
 
         assert os.path.exists(checkpoint_path), checkpoint_path
         config_args = json.load(open(config_file, 'rb'))
-        #config_args.update(cmd_args)
+        # config_args.update(cmd_args)
         args = type('Args', (object,), config_args)
         args.data_type = data_type
         print(args.__dict__)
@@ -132,9 +135,10 @@ class TableRecognizer:
         self.device = torch.device(args.device)
         self.model, _, self.postprocessors = get_model(args, self.device)
         self.model.eval()
+        self.data_type = data_type
         self.make_coco = make_coco
         self.export_objects = export_objects
-        # class_map = get_class_map()
+        self.class_map = get_class_map(data_type)
         self.images_dir = os.path.join(root, images_dir)
         self.normalize = R.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         self.save_debug_images = save_debug_images
@@ -142,8 +146,8 @@ class TableRecognizer:
         self.ds = ds
         self.image_extension = image_extension
         self.root = root
-        self.class_list = [{'label': c['label'], 'name': c['category_name']} for c in get_colors_map()]
-
+        self.output_class_list = [{'label': c['label'], 'name': c['category_name']} for c in get_colors_map()]
+        self.class_list = list(self.class_map.values())
         self.debug_images_dir = f"{os.path.split(os.path.abspath(self.images_dir))[0]}/debug"
         if self.save_debug_images and not os.path.exists(self.debug_images_dir):
             os.makedirs(self.debug_images_dir)
@@ -165,12 +169,13 @@ class TableRecognizer:
                 crop_box = self.ds._get_cropped_bbox(img_filename)
                 padding_box = self.ds._get_padding_bbox(img_filename)
 
-                rows, cols, cells, debug_image = self.get_objects(image_path, crop_box, padding_box)
+                rows, cols, cells, tables, debug_image = self.get_objects(image_path, crop_box, padding_box)
                 if self.export_objects:
                     obj_details = {
                         "original_file": img_filename,
                         "cropped_bbox": crop_box,
                         "padding": padding_box,
+                        "detection": tables,
                         "cells_structure": cells,
                         "table_structure": {
                             "rows": rows,
@@ -183,7 +188,7 @@ class TableRecognizer:
 
                     result_objs.append(obj_details)
             result = {"objs": result_objs,
-                      "categories": self.class_list[:-3]
+                      "categories": self.output_class_list[:-3]
                       }
             jsonString = json.dumps(result)
             jsonFile = open("output.json", "w")
@@ -211,17 +216,22 @@ class TableRecognizer:
             rows = []
         if cols is None:
             rows = []
-        print(rows,cols,cells)
+        tables = []
+        if self.data_type == 'detection':
+            tables = [obj for obj in results["debug_objects"] if obj['label'] in set(self.class_list)]
+        # print(rows,cols,cells)
         if self.original_xy_offset:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
             cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
-        return rows, cols, cells, output["debug_image"]
+
+        return rows, cols, cells, tables, output["debug_image"]
 
     def process_coco(self, max_count):
         # for coco
         self.dataset = {}
-        self.dataset['images'] = [{'id': idx, 'file_name': page_id} for idx, page_id in enumerate(self.page_ids[:max_count])]
+        self.dataset['images'] = [{'id': idx, 'file_name': page_id} for idx, page_id in
+                                  enumerate(self.page_ids[:max_count])]
         self.dataset['annotations'] = []
         self.dataset["info"] = {
             "year": "2022",
@@ -237,18 +247,19 @@ class TableRecognizer:
             crop_box = self.ds._get_cropped_bbox(img_filename)
             padding_box = self.ds._get_padding_bbox(img_filename)
             image_path = os.path.join(self.images_dir, img_filename)
-
-            rows, cols, cells, _ = self.get_objects(image_path, crop_box, padding_box)
+            rows, cols, cells, tables, _ = self.get_objects(image_path, crop_box, padding_box)
 
             # Reduce class set
             # keep_indices = [idx for idx, label in enumerate(labels) if label in self.class_set]
             bboxes = [cell['bbox'] for cell in cells]
             bboxes.extend([row['bbox'] for row in rows])
             bboxes.extend([col['bbox'] for col in cols])
+            bboxes.extend([table['bbox'] for table in tables])
 
             labels = [self.cell_label(cell) for cell in cells]
             labels.extend([row['label'] for row in rows])
             labels.extend([col['label'] for col in cols])
+            labels.extend([table['label'] for table in tables])
 
             for bbox, label in zip(bboxes, labels):
                 ann = {'area': (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]),
@@ -261,7 +272,7 @@ class TableRecognizer:
                        'segmentation': []}
                 self.dataset['annotations'].append(ann)
                 ann_id += 1
-            self.dataset['categories'] = [{'id': idx} for idx in self.class_list]
+            self.dataset['categories'] = [{'id': idx} for idx in self.output_class_list]
 
         jsonString = json.dumps(self.dataset)
         jsonFile = open("coco_output.json", "w")
@@ -269,7 +280,7 @@ class TableRecognizer:
         jsonFile.close()
 
     def cell_label(self, cell):
-        if 'header' in cell.keys() and cell['header'] :
+        if 'header' in cell.keys() and cell['header']:
             return 7
         if 'subheader' in cell.keys() and cell['subheader']:
             return 8
@@ -353,7 +364,8 @@ class TableRecognizer:
         with torch.no_grad():
             outputs = self.model(img_tensor)
 
-        pred_table_structures, pred_cells, pred_confidence_score = self.objects_to_grid_cells(outputs, page_tokens, image)
+        pred_table_structures, pred_cells, pred_confidence_score = self.objects_to_grid_cells(outputs, page_tokens,
+                                                                                              image)
 
         image_size = torch.unsqueeze(torch.as_tensor([int(h), int(w)]), 0).to(self.device)
         results = self.postprocessors['bbox'](outputs, image_size)[0]
@@ -373,7 +385,7 @@ class TableRecognizer:
                 dx, dy = colors[category_type]['dx'], colors[category_type]['dy']
 
                 cv2.rectangle(image, (xmin, ymin), (xmax + dx, ymax + dy), (r, g, b), 2)
-                result_objects.append({'category_type': category_type, 'bbox': [xmin, ymin, xmax, ymax]})
+                result_objects.append({'label': category_type, 'bbox': [xmin, ymin, xmax, ymax]})
             results["debug_image"] = image
             results["debug_objects"] = result_objects
             results["pred_table_structures"] = pred_table_structures
