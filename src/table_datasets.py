@@ -658,8 +658,10 @@ class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
         w, h = img.size
 
         if self.types[idx] == 1:
-            bboxes, labels = read_pascal_voc(annot_path, class_map=self.class_map) #[],[] bboxes, labels
-
+            #bboxes, labels = read_pascal_voc(annot_path, class_map=self.class_map) #[],[] bboxes, labels
+            table_obj = self.table_objs[page_id]
+            bboxes = [table_obj['bbox']]
+            labels = [table_obj['category_id']]
             # Reduce class set
             keep_indices = [
                 idx for idx, label in enumerate(labels) if label in self.class_set
