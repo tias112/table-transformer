@@ -650,7 +650,7 @@ class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
         # load images ad masks
         page_id = self.page_ids[idx]
         img_path = os.path.join(
-            self.root, "..", "images", page_id + self.image_extension
+            self.root, "images", page_id + self.image_extension
         )
         annot_path = os.path.join(self.root, page_id + ".xml")
 
