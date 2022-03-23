@@ -98,7 +98,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         m = outputs['pred_logits'].softmax(-1).max(-1)
         scores = m.values
         labels = m.indices
-        rescaled_bboxes = self.rescale_bboxes(boxes[0].cpu(), image.size)
+        #rescaled_bboxes = self.rescale_bboxes(boxes[0].cpu(), image.size)
         #pred_bboxes = [bbox.tolist() for bbox in rescaled_bboxes]
         pred_labels = labels[0].tolist()
         pred_scores = scores[0].tolist()
