@@ -495,6 +495,17 @@ class PDFTablesDataset(torch.utils.data.Dataset):
         return ids
 
 
+import json
+
+def get_bd_category_map():
+    category_map = {
+        "table": 0,
+        "Cell": 1,
+        "header": 2
+    }
+    return category_map
+
+
 class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
     def __init__(
         self,
