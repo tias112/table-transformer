@@ -32,17 +32,18 @@ from train_core import eval
 
 # def main():
 class EvalDetectionModel:
-    def __init__(self,  data_root_dir):
+    def __init__(self, checkpoint_path, data_root_dir, config_file=""):
         args = Args
 
-        print(args.__dict__)
         print("-" * 100)
 
         args.data_root_dir = data_root_dir
-        args.config_file="detection_config.json"
+        args.config_file=config_file
         args.data_type='detection'
         args.mode='eval'
+        args.model_load_path = checkpoint_path
         # fix the seed for reproducibility
+        print(args.__dict__)
         seed = args.seed + utils.get_rank()
         torch.manual_seed(seed)
         np.random.seed(seed)

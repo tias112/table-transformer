@@ -669,7 +669,7 @@ class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
             ]
             bboxes = [bboxes[idx] for idx in keep_indices]
             labels = [labels[idx] for idx in keep_indices]
-
+            print(bboxes, labels)
             # Convert to Torch Tensor
             if len(labels) > 0:
                 bboxes = torch.as_tensor(bboxes, dtype=torch.float32)
