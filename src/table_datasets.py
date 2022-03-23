@@ -496,10 +496,20 @@ class PDFTablesDataset(torch.utils.data.Dataset):
 
 
 class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
-    def __init__(self, root, transforms=None, max_size=None, do_crop=True, make_coco=False,
-                 include_original=False, max_neg=None, negatives_root=None, xml_fileset="filelist.txt",
-                 image_extension='.png', class_map=None):
-        print(root)
+    def __init__(
+        self,
+        root,
+        transforms=None,
+        max_size=None,
+        do_crop=True,
+        make_coco=False,
+        include_original=False,
+        max_neg=None,
+        negatives_root=None,
+        xml_fileset="filelist.txt",
+        image_extension=".png",
+        class_map=None,
+    ):
         self.root = root
         self.transforms = transforms
         self.do_crop = do_crop
@@ -508,24 +518,30 @@ class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
         self.class_map = class_map
         self.class_list = list(class_map)
         self.class_set = set(class_map.values())
-        self.class_set.remove(class_map['no object'])
-
-        try:
-            with open(os.path.join(root, "..", xml_fileset), 'r') as file:
-                lines = file.readlines()
-                lines = [l.split('/')[-1] for l in lines]
-        except:
-            lines = os.listdir(root)
-        xml_page_ids = set([f.strip().replace(".xml", "") for f in lines if f.strip().endswith(".xml")])
-
-        image_directory = os.path.join(root, "..", "images")
-        try:
-            with open(os.path.join(image_directory, "filelist.txt"), 'r') as file:
-                lines = file.readlines()
-        except:
-            lines = os.listdir(image_directory)
+        self.class_set.remove(class_map["no object"])
+        bd_category_map = get_bd_category_map()
+        with open(os.path.join(root, "val.json"), "r") as file:
+            data = json.load(file)
+            imageid_dict = {k['id']: k['file_name'] for k in data['images']}
+            self.table_objs = {imageid_dict[obj['image_id']].strip().replace(self.image_extension, ""): obj for obj in data['annotations'] if
+                               'category_id' in obj and obj['category_id'] == bd_category_map['table']
+                               }
+            xml_page_ids = set(self.table_objs.keys()
+                #[k['file_name'].strip().replace(self.image_extension, "") for k in data['images']]
+            )
+        image_directory = os.path.join(root,  "images")
+        #try:
+         #   with open(os.path.join(image_directory, "filelist.txt"), "r") as file:
+          #      lines = file.readlines()
+        #except:
+        lines = os.listdir(image_directory)
         png_page_ids = set(
-            [f.strip().replace(self.image_extension, "") for f in lines if f.strip().endswith(self.image_extension)])
+            [
+                f.strip().replace(self.image_extension, "")
+                for f in lines
+                if f.strip().endswith(self.image_extension)
+            ]
+        )
 
         self.page_ids = list(xml_page_ids.intersection(png_page_ids))
         if not max_size is None:
@@ -534,9 +550,14 @@ class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
         self.types = [1 for idx in range(num_page_ids)]
 
         if not max_neg is None and max_neg > 0:
-            with open(os.path.join(negatives_root, "filelist.txt"), 'r') as file:
+            with open(os.path.join(negatives_root, "filelist.txt"), "r") as file:
                 neg_xml_page_ids = set(
-                    [f.strip().replace(".xml", "") for f in file.readlines() if f.strip().endswith(".xml")])
+                    [
+                        f.strip().replace(".xml", "")
+                        for f in file.readlines()
+                        if f.strip().endswith(".xml")
+                    ]
+                )
                 neg_xml_page_ids = neg_xml_page_ids.intersection(png_page_ids)
                 neg_xml_page_ids = list(neg_xml_page_ids.difference(set(self.page_ids)))
                 if len(neg_xml_page_ids) > max_neg:
@@ -546,59 +567,66 @@ class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
 
         self.has_mask = False
         self.include_original = include_original
-
+        #TODO; might not needed as BDOC already in coco format
         if self.make_coco:
             self.dataset = {}
-            self.dataset['images'] = [{'id': idx} for idx, _ in enumerate(self.page_ids)]
-            self.dataset['annotations'] = []
+            self.dataset["images"] = [
+                {"id": idx} for idx, _ in enumerate(self.page_ids)
+            ]
+            self.dataset["annotations"] = []
             ann_id = 0
             for image_id, page_id in enumerate(self.page_ids):
-                annot_path = os.path.join(self.root, page_id + ".xml")
-                bboxes, labels = read_pascal_voc(annot_path, class_map=self.class_map)
 
                 # Reduce class set
-                keep_indices = [idx for idx, label in enumerate(labels) if label in self.class_set]
-                bboxes = [bboxes[idx] for idx in keep_indices]
-                labels = [labels[idx] for idx in keep_indices]
+                #keep_indices = [
+                 #   idx for idx, label in enumerate(labels) if label in self.class_set
+                #]
+                #bboxes = [bboxes[idx] for idx in keep_indices]
+                #labels = [labels[idx] for idx in keep_indices]
 
-                for bbox, label in zip(bboxes, labels):
-                    ann = {'area': (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]),
-                           'iscrowd': 0,
-                           'bbox': [bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]],
-                           'category_id': label,
-                           'image_id': image_id,
-                           'id': ann_id,
-                           'ignore': 0,
-                           'segmentation': []}
-                    self.dataset['annotations'].append(ann)
-                    ann_id += 1
-            self.dataset['categories'] = [{'id': idx} for idx in self.class_list[:-1]]
-
+                #for table_obj in self.table_objs[page_id + self.image_extension]:
+                table_obj = self.table_objs[page_id]
+                bbox = table_obj['bbox']
+                label = table_obj['category_id']
+                ann = {
+                    "area": (bbox[2]) * (bbox[3]),
+                    "iscrowd": 0,
+                    "bbox": bbox,
+                    "category_id": label,
+                    "image_id": image_id,
+                    "id": ann_id,
+                    "ignore": 0,
+                    "segmentation": [],
+                }
+                self.dataset["annotations"].append(ann)
+                ann_id += 1
+            self.dataset["categories"] = [{"id": idx} for idx in self.class_list[:-1]]
+            print(self.dataset)
             self.createIndex()
 
     def createIndex(self):
         # create index
-        print('creating index...')
+        print("creating index...")
         anns, cats, imgs = {}, {}, {}
         imgToAnns, catToImgs = defaultdict(list), defaultdict(list)
-        if 'annotations' in self.dataset:
-            for ann in self.dataset['annotations']:
-                imgToAnns[ann['image_id']].append(ann)
-                anns[ann['id']] = ann
+        if "annotations" in self.dataset:
+            for ann in self.dataset["annotations"]:
+                imgToAnns[ann["image_id"]].append(ann)
+                anns[ann["id"]] = ann
 
-        if 'images' in self.dataset:
-            for img in self.dataset['images']:
-                imgs[img['id']] = img
+        if "images" in self.dataset:
+            for img in self.dataset["images"]:
+                imgs[img["id"]] = img
 
-        if 'categories' in self.dataset:
-            for cat in self.dataset['categories']:
-                cats[cat['id']] = cat
+        if "categories" in self.dataset:
+            for cat in self.dataset["categories"]:
+                cats[cat["id"]] = cat
 
-        if 'annotations' in self.dataset and 'categories' in self.dataset:
-            for ann in self.dataset['annotations']:
-                catToImgs[ann['category_id']].append(ann['image_id'])
+        if "annotations" in self.dataset and "categories" in self.dataset:
+            for ann in self.dataset["annotations"]:
+                catToImgs[ann["category_id"]].append(ann["image_id"])
 
-        print('index created!')
+        print("index created!")
 
         # create class members
         self.anns = anns
@@ -610,17 +638,21 @@ class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         # load images ad masks
         page_id = self.page_ids[idx]
-        img_path = os.path.join(self.root, "..", "images", page_id + self.image_extension)
+        img_path = os.path.join(
+            self.root, "..", "images", page_id + self.image_extension
+        )
         annot_path = os.path.join(self.root, page_id + ".xml")
 
         img = Image.open(img_path).convert("RGB")
         w, h = img.size
 
         if self.types[idx] == 1:
-            bboxes, labels = read_pascal_voc(annot_path, class_map=self.class_map)
+            bboxes, labels = read_pascal_voc(annot_path, class_map=self.class_map) #[],[] bboxes, labels
 
             # Reduce class set
-            keep_indices = [idx for idx, label in enumerate(labels) if label in self.class_set]
+            keep_indices = [
+                idx for idx, label in enumerate(labels) if label in self.class_set
+            ]
             bboxes = [bboxes[idx] for idx in keep_indices]
             labels = [labels[idx] for idx in keep_indices]
 
@@ -689,16 +721,30 @@ class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
         catIds = catIds if _isArrayLike(catIds) else [catIds]
 
         if len(imgIds) == len(catIds) == len(areaRng) == 0:
-            anns = self.dataset['annotations']
+            anns = self.dataset["annotations"]
         else:
             if not len(imgIds) == 0:
-                lists = [self.imgToAnns[imgId] for imgId in imgIds if imgId in self.imgToAnns]
+                lists = [
+                    self.imgToAnns[imgId] for imgId in imgIds if imgId in self.imgToAnns
+                ]
                 anns = list(itertools.chain.from_iterable(lists))
             else:
-                anns = self.dataset['annotations']
-            anns = anns if len(catIds) == 0 else [ann for ann in anns if ann['category_id'] in catIds]
-            anns = anns if len(areaRng) == 0 else [ann for ann in anns if
-                                                   ann['area'] > areaRng[0] and ann['area'] < areaRng[1]]
+                anns = self.dataset["annotations"]
+            anns = (
+                anns
+                if len(catIds) == 0
+                else [ann for ann in anns if ann["category_id"] in catIds]
+            )
+            anns = (
+                anns
+                if len(areaRng) == 0
+                else [
+                    ann
+                    for ann in anns
+                    if ann["area"] > areaRng[0] and ann["area"] < areaRng[1]
+                ]
+            )
 
-            ids = [ann['id'] for ann in anns]
+            ids = [ann["id"] for ann in anns]
         return ids
+
