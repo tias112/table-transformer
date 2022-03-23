@@ -17,7 +17,7 @@ from models import build_model
 import util.misc as utils
 import datasets.transforms as R
 
-from table_datasets import PDFTablesDataset, TightAnnotationCrop, RandomPercentageCrop, RandomErasingWithTarget, ToPILImageWithTarget, RandomMaxResize, RandomCrop
+from table_datasets import PDFBadgerDocTablesDataset, PDFTablesDataset, TightAnnotationCrop, RandomPercentageCrop, RandomErasingWithTarget, ToPILImageWithTarget, RandomMaxResize, RandomCrop
 from grits import grits
 
 
@@ -184,12 +184,12 @@ def get_data(args):
 
     elif args.mode == "eval":
 
-        dataset_test = PDFTablesDataset(os.path.join(args.data_root_dir,
-                                                     "test"),
+        dataset_test = PDFBadgerDocTablesDataset(os.path.join(args.data_root_dir,
+                                                     "val"),
                                         get_transform(args.data_type, "val"),
                                         do_crop=False,
                                         make_coco=True,
-                                        image_extension=".jpg",
+                                        image_extension=".png",
                                         xml_fileset="test_filelist.txt",
                                         class_map=class_map)
         sampler_test = torch.utils.data.SequentialSampler(dataset_test)

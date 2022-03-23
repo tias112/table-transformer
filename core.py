@@ -247,7 +247,9 @@ class TableRecognizer:
             crop_box = self.ds._get_cropped_bbox(img_filename)
             padding_box = self.ds._get_padding_bbox(img_filename)
             image_path = os.path.join(self.images_dir, img_filename)
-            rows, cols, cells, tables, _ = self.get_objects(image_path, crop_box, padding_box)
+            rows, cols, cells, tables, debug_image = self.get_objects(image_path, crop_box, padding_box)
+            if self.save_debug_images:
+                cv2.imwrite(f"{self.debug_images_dir}/{img_filename}", debug_image)
 
             # Reduce class set
             # keep_indices = [idx for idx, label in enumerate(labels) if label in self.class_set]
