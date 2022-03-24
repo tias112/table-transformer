@@ -661,8 +661,8 @@ class PDFBadgerDocTablesDataset(torch.utils.data.Dataset):
             #bboxes, labels = read_pascal_voc(annot_path, class_map=self.class_map) #[],[] bboxes, labels
             table_obj = self.table_objs[page_id]
             bbox = table_obj['bbox']
-            bboxes = [[bbox[0], bbox[1], bbox[0]+bbox[2], bbox[1]+bbox[3]]]
-            #bboxes = [[bbox[0], bbox[1], bbox[2], bbox[3]]]
+            #bboxes = [[bbox[0], bbox[1], bbox[0]+bbox[2], bbox[1]+bbox[3]]]
+            bboxes = [[bbox[0], bbox[1], bbox[2], bbox[3]]]
             labels = [table_obj['category_id']]
             # Reduce class set
             keep_indices = [
