@@ -80,7 +80,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
     iou_types = tuple(k for k in ('segm', 'bbox') if k in postprocessors.keys())
     coco_evaluator = CocoEvaluator(base_ds, iou_types)
     # coco_evaluator.coco_eval[iou_types[0]].params.iouThrs = [0, 0.1, 0.5, 0.75]
-
+    print("iou_types", iou_types)
     panoptic_evaluator = None
     if 'panoptic' in postprocessors.keys():
         panoptic_evaluator = PanopticEvaluator(
@@ -92,7 +92,7 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
     for samples, targets in metric_logger.log_every(data_loader, 1000, header):
         samples = samples.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-        print(targets)
+        print("targets", targets)
         outputs = model(samples)
         boxes = outputs['pred_boxes']
         m = outputs['pred_logits'].softmax(-1).max(-1)
@@ -103,9 +103,9 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
         pred_labels = labels[0].tolist()
         pred_scores = scores[0].tolist()
 
-        print(boxes)
-        print(pred_labels)
-        print(pred_scores)
+        #print(boxes)
+        #print(pred_labels)
+        #print(pred_scores)
         loss_dict = criterion(outputs, targets)
         weight_dict = criterion.weight_dict
 
@@ -122,7 +122,9 @@ def evaluate(model, criterion, postprocessors, data_loader, base_ds, device, out
 
         orig_target_sizes = torch.stack([t["orig_size"] for t in targets], dim=0)
         results = postprocessors['bbox'](outputs, orig_target_sizes)
+        print("results", results)
         if 'segm' in postprocessors.keys():
+            print("segm")
             target_sizes = torch.stack([t["size"] for t in targets], dim=0)
             results = postprocessors['segm'](results, outputs, orig_target_sizes, target_sizes)
         res = {target['image_id'].item(): output for target, output in zip(targets, results)}
