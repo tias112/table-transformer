@@ -39,6 +39,17 @@ from table_datasets import (
 )
 
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+
+
 def get_class_map(data_type):
     if data_type == 'structure':
         class_map = {
@@ -190,7 +201,7 @@ class TableRecognizer:
             result = {"objs": result_objs,
                       "categories": self.output_class_list[:-3]
                       }
-            jsonString = json.dumps(result)
+            jsonString = json.dumps(result, cls=NpEncoder)
             jsonFile = open("output.json", "w")
             jsonFile.write(jsonString)
             jsonFile.close()
@@ -207,9 +218,9 @@ class TableRecognizer:
             with open(img_words_filepath, 'r') as f:
                 page_tokens = json.load(f)
         output = self.predict(image_path, page_tokens)
-        rows = output["pred_table_structures"]["rows"]
-        cols = output["pred_table_structures"]["columns"]
-        headers = output["pred_table_structures"]["headers"]
+        #rows = output["pred_table_structures"]["rows"]
+        ##cols = output["pred_table_structures"]["columns"]
+        #headers = output["pred_table_structures"]["headers"]
         cells = output["pred_cells"]
         if cells is None:
             cells = []
