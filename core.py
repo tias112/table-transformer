@@ -266,8 +266,8 @@ class TableRecognizer:
             labels = [self.cell_label(cell) for cell in cells]
             labels.extend([row['label'] for row in rows])
             labels.extend([col['label'] for col in cols])
-            labels.extend([header['label'] for header in headers])
-            labels.extend([self.class_map['table column header'] for table in tables])
+            labels.extend([self.class_map['table column header'] for header in headers])
+            labels.extend([table['label'] for table in tables])
             for bbox, label in zip(bboxes, labels):
                 ann = {'area': (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]),
                        'iscrowd': 0,
