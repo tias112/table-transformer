@@ -227,7 +227,7 @@ class TableRecognizer:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
             cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
-            headers =self.origin_img_cell_xy(headers, crop_box, padding_box)
+            headers =self.origin_img_table_xy(headers, crop_box, padding_box)
         print("headers", headers)
         return rows, cols, headers, cells, tables, output["debug_image"]
 
