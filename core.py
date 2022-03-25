@@ -169,7 +169,7 @@ class TableRecognizer:
                 crop_box = self.ds._get_cropped_bbox(img_filename)
                 padding_box = self.ds._get_padding_bbox(img_filename)
 
-                rows, cols, cells, tables, debug_image = self.get_objects(image_path, crop_box, padding_box)
+                rows, cols, cells, headers, tables, debug_image = self.get_objects(image_path, crop_box, padding_box)
                 if self.export_objects:
                     obj_details = {
                         "original_file": img_filename,
@@ -209,6 +209,7 @@ class TableRecognizer:
         output = self.predict(image_path, page_tokens)
         rows = output["pred_table_structures"]["rows"]
         cols = output["pred_table_structures"]["columns"]
+        headers = output["pred_table_structures"]["headers"]
         cells = output["pred_cells"]
         if cells is None:
             cells = []
@@ -216,6 +217,8 @@ class TableRecognizer:
             rows = []
         if cols is None:
             rows = []
+        if headers is None:
+            headers = []
         tables = []
         if self.data_type == 'detection':
             tables = [obj for obj in output["debug_objects"] if obj['label'] in set(self.class_list)]
@@ -224,8 +227,8 @@ class TableRecognizer:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
             cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
-
-        return rows, cols, cells, tables, output["debug_image"]
+            headers =self.origin_img_cell_xy(headers, crop_box, padding_box)
+        return rows, cols, headers, cells, tables, output["debug_image"]
 
     def process_coco(self, max_count):
         # for coco
@@ -247,7 +250,7 @@ class TableRecognizer:
             crop_box = self.ds._get_cropped_bbox(img_filename)
             padding_box = self.ds._get_padding_bbox(img_filename)
             image_path = os.path.join(self.images_dir, img_filename)
-            rows, cols, cells, tables, debug_image = self.get_objects(image_path, crop_box, padding_box)
+            rows, cols, headers, cells, tables, debug_image = self.get_objects(image_path, crop_box, padding_box)
             if self.save_debug_images:
                 cv2.imwrite(f"{self.debug_images_dir}/{img_filename}", debug_image)
 
@@ -256,13 +259,14 @@ class TableRecognizer:
             bboxes = [cell['bbox'] for cell in cells]
             bboxes.extend([row['bbox'] for row in rows])
             bboxes.extend([col['bbox'] for col in cols])
+            bboxes.extend([header['bbox'] for header in headers])
             bboxes.extend([table['bbox'] for table in tables])
 
             labels = [self.cell_label(cell) for cell in cells]
             labels.extend([row['label'] for row in rows])
             labels.extend([col['label'] for col in cols])
             labels.extend([table['label'] for table in tables])
-
+            labels.extend([header['label'] for header in headers])
             for bbox, label in zip(bboxes, labels):
                 ann = {'area': (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]),
                        'iscrowd': 0,
