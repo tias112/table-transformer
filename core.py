@@ -228,7 +228,7 @@ class TableRecognizer:
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
             cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
             headers =self.origin_img_table_xy(headers, crop_box, padding_box)
-        print("headers", headers)
+        #print("headers", headers)
         return rows, cols, headers, cells, tables, output["debug_image"]
 
     def process_coco(self, max_count):
@@ -267,7 +267,7 @@ class TableRecognizer:
             labels.extend([row['label'] for row in rows])
             labels.extend([col['label'] for col in cols])
             labels.extend([header['label'] for header in headers])
-            labels.extend([table['label'] for table in tables])
+            labels.extend([self.class_map['table column header'] for table in tables])
             for bbox, label in zip(bboxes, labels):
                 ann = {'area': (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]),
                        'iscrowd': 0,
