@@ -215,24 +215,25 @@ class TableRecognizer:
             cells = []
         headers = []
         tables = []
-        cols=[]
-        rows=[]
+        cols = []
+        rows = []
         if self.data_type == 'detection':
             tables = [obj for obj in output["debug_objects"] if obj['label'] in set(self.class_list)]
         if self.data_type == 'structure':
-            headers = [obj for obj in output["debug_objects"] if obj['label'] in set(self.class_map['table column header'])]
+            headers = [obj for obj in output["debug_objects"] if
+                       obj['label'] in set([self.class_map['table column header']])]
             rows = [obj for obj in output["debug_objects"] if
-                       obj['label'] in set(self.class_map['table row'])]
+                    obj['label'] in set([self.class_map['table row']])]
             cols = [obj for obj in output["debug_objects"] if
-                    obj['label'] in set(self.class_map['table column'])]
+                    obj['label'] in set([self.class_map['table column']])]
 
         # print(rows,cols,cells)
         if self.original_xy_offset:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
             cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
-            headers =self.origin_img_table_xy(headers, crop_box, padding_box)
-        #print("headers", headers)
+            headers = self.origin_img_table_xy(headers, crop_box, padding_box)
+        # print("headers", headers)
         return rows, cols, headers, cells, tables, output["debug_image"]
 
     def process_coco(self, max_count):
