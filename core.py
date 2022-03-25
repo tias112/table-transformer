@@ -213,15 +213,19 @@ class TableRecognizer:
         cells = output["pred_cells"]
         if cells is None:
             cells = []
-        if rows is None:
-            rows = []
-        if cols is None:
-            rows = []
-        if headers is None:
-            headers = []
+        headers = []
         tables = []
+        cols=[]
+        rows=[]
         if self.data_type == 'detection':
             tables = [obj for obj in output["debug_objects"] if obj['label'] in set(self.class_list)]
+        if self.data_type == 'structure':
+            headers = [obj for obj in output["debug_objects"] if obj['label'] in set(self.class_map['table column header'])]
+            rows = [obj for obj in output["debug_objects"] if
+                       obj['label'] in set(self.class_map['table row'])]
+            cols = [obj for obj in output["debug_objects"] if
+                    obj['label'] in set(self.class_map['table column'])]
+
         # print(rows,cols,cells)
         if self.original_xy_offset:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
