@@ -298,7 +298,7 @@ class TableRecognizer:
             self.dataset['categories'] = [{'id': idx} for idx in self.output_class_list]
 
         jsonString = json.dumps(self.dataset, cls=NpEncoder)
-        jsonFile = open("coco_output.json", "w")
+        jsonFile = open(f"coco_{self.data_type}_output.json", "w")
         jsonFile.write(jsonString)
         jsonFile.close()
 
