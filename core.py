@@ -281,10 +281,8 @@ class TableRecognizer:
         for image_id, page_id in enumerate(self.page_ids[:max_count]):
             img_filename = page_id
             print(img_filename)
-            crop_box = self.ds._get_cropped_bbox(img_filename)
-            padding_box = self.ds._get_padding_bbox(img_filename)
             image_path = os.path.join(self.images_dir, img_filename)
-            rows, cols, headers, cells, tables, debug_image = self.get_objects(image_path, crop_box, padding_box)
+            rows, cols, headers, cells, tables, debug_image = self.get_objects(image_path)
             if self.save_debug_images:
                 cv2.imwrite(f"{self.debug_images_dir}/{img_filename}", debug_image)
 
