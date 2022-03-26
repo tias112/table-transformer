@@ -317,7 +317,7 @@ class TableRecognizer:
         result = self.dataset
         if self.for_analysis:
             result = [ann for ann in self.dataset['annotations']
-                      if ann['category_id'] > 0 and not ann['image_id'] is None]
+                      if ann['category_id'] >= 0 and not ann['image_id'] is None]
         with open(os.path.join(self.coco_output_dir, f"coco_{self.data_type}_output.json"), "w") as f:
             f.write(json.dumps(result, cls=NpEncoder))
 
