@@ -195,7 +195,6 @@ class TableRecognizer:
         if not os.path.exists(self.coco_output_dir):
             os.makedirs(self.coco_output_dir)
 
-
     def process(self, max_count):
         result_objs = []
         if self.export_objects:
@@ -230,7 +229,7 @@ class TableRecognizer:
         if self.make_coco:
             self.process_coco(max_count)
 
-    #TODO: refactor: no need separet rows/cols/headers
+    # TODO: refactor: no need separet rows/cols/headers
     def get_objects(self, image_path):
         img_filename = os.path.basename(image_path)
         table_words_dir = f"{self.root}/words/lines/"
@@ -243,7 +242,7 @@ class TableRecognizer:
         cells = output["pred_cells"]
         if cells is None:
             cells = []
-        headers, tables,cols, rows = [],[],[],[]
+        headers, tables, cols, rows = [], [], [], []
         if self.data_type == 'detection':
             tables = [obj for obj in output["debug_objects"] if obj['label'] in set(self.class_list)]
         if self.data_type == 'structure':
@@ -260,12 +259,13 @@ class TableRecognizer:
             cols = self.ds.origin_img_table_xy(cols, img_filename)
             cells = self.ds.origin_img_cell_xy(cells, img_filename)
             headers = self.ds.origin_img_table_xy(headers, img_filename)
-        #print("headers", headers)
+        # print("headers", headers)
         return rows, cols, headers, cells, tables, output["debug_image"]
 
     def process_coco(self, max_count):
         # for coco
-        self.dataset['images'] = [{'id': self.ds.get_original_image_id(page_id), 'file_name': page_id} for idx, page_id in
+        self.dataset['images'] = [{'id': self.ds.get_original_image_id(page_id), 'file_name': page_id} for idx, page_id
+                                  in
                                   enumerate(self.page_ids[:max_count])]
         self.dataset['annotations'] = []
         self.dataset["info"] = {
@@ -310,7 +310,9 @@ class TableRecognizer:
                        'image_id': self.ds.get_original_image_id(img_filename),
                        'id': ann_id,
                        'ignore': 0,
-                       'segmentation': []}
+                       'segmentation': [],
+                       'score': 1.0
+                       }
                 self.dataset['annotations'].append(ann)
                 ann_id += 1
 
@@ -340,7 +342,6 @@ class TableRecognizer:
         x_c, y_c, w, h = x.unbind(1)
         b = [(x_c - 0.5 * w), (y_c - 0.5 * h), (x_c + 0.5 * w), (y_c + 0.5 * h)]
         return torch.stack(b, dim=1)
-
 
     def objects_to_grid_cells(self, outputs, page_tokens, image):
         """     from grits
