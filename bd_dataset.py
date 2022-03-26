@@ -99,8 +99,8 @@ class BDTablesDataset(torch.utils.data.Dataset):
 
     # keeping borders within cropped image
     def _get_bbox_with_borders(self, bbox):
-        return bbox[0] - self.pad, bbox[1] - self.pad, bbox[0] + bbox[2] + 2 * self.pad, bbox[1] + bbox[
-            3] + 2 * self.pad
+        return [bbox[0] - self.pad, bbox[1] - self.pad, bbox[0] + bbox[2] + 2 * self.pad, bbox[1] + bbox[
+            3] + 2 * self.pad]
 
     def _process_images(self, max_samples):
         # Iterating through the tables and cut
