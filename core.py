@@ -222,7 +222,7 @@ class TableRecognizer:
         ##cols = output["pred_table_structures"]["columns"]
         #headers = output["pred_table_structures"]["headers"]
         cells = output["pred_cells"]
-        print("debug_results", output["debug_objects"])
+        #print("debug_results", output["debug_objects"])
         if cells is None:
             cells = []
         headers = []
@@ -240,12 +240,13 @@ class TableRecognizer:
                     obj['label'] in set([self.class_map['table column']])]
 
         # print(rows,cols,cells)
+        print("headers", headers, crop_box, padding_box)
         if self.original_xy_offset:
             rows = self.origin_img_table_xy(rows, crop_box, padding_box)
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
             cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
             headers = self.origin_img_table_xy(headers, crop_box, padding_box)
-        print("headers", headers)
+        #print("headers", headers)
         return rows, cols, headers, cells, tables, output["debug_image"]
 
     def process_coco(self, max_count):
