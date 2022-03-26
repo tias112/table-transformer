@@ -42,6 +42,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
         self.category_map = category_map
         self.bbox_data = bbox_data
         self.table_objs = {}
+        self.name2imageid_dict = {}
         self.pad = 3
         self.root = root
         self.image_directory = os.path.join(root, "images")
@@ -49,16 +50,17 @@ class BDTablesDataset(torch.utils.data.Dataset):
         self.words_directory = os.path.join(root, "words")
         self.category_map = get_category_map()
         lines = os.listdir(self.image_directory)
-        png_pages = set(
+        png_images = set(
             [f for f in lines if f.strip().endswith(self.image_extension)])
 
         with open(os.path.join(root, "val.json"), "r") as file:
             data = json.load(file)
             imageid_dict = {k['id']: k['file_name'] for k in data['images']}
+            self.name2imageid_dict = {k['file_name']: k['id'] for k in data['images']}
             self.table_objs = {imageid_dict[obj['image_id']]: obj for obj in data['annotations'] if
                                'category_id' in obj
                                and obj['category_id'] == category_map['table']
-                               and imageid_dict[obj['image_id']] in png_pages}
+                               and imageid_dict[obj['image_id']] in png_images}
 
 
     #return bounding box of cropped table from original image
@@ -75,6 +77,9 @@ class BDTablesDataset(torch.utils.data.Dataset):
             if 'padding' in table_obj.keys():
                 return table_obj['padding']
         return [0, 0, 0, 0]
+
+    def get_original_image_id(self, filename):
+        return self.name2imageid_dict[filename]
 
     def origin_img_cell_xy(self, pred_cells,img_filename):
         crop_box = self._get_cropped_bbox(img_filename)

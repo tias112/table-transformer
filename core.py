@@ -112,11 +112,25 @@ def get_model(args, device):
     return model, criterion, postprocessors
 
 
-# def main():
+def map_to_original_category(categories):
+    category_map = {}
+    for category in categories:
+        category_map.update({category['id']['label']: -1})
+        if 'cell' in category['id']['name']:
+            category_map.update({category['id']['label']: 1})
+        if category['id']['name'] == "table column header":
+            category_map.update({category['id']['label']: 2})
+        if category['id']['name'] == "table":
+            category_map.update({category['id']['label']: 0})
+
+    return category_map
+
+
 class TableRecognizer:
     def __init__(self, checkpoint_path,
                  make_coco=False,
                  export_objects=True,
+                 for_analysis=False,
                  root=None,
                  images_dir="processed",
                  image_extension=".png",
@@ -148,6 +162,7 @@ class TableRecognizer:
         self.model.eval()
         self.data_type = data_type
         self.make_coco = make_coco
+        self.for_analysis = for_analysis
         self.export_objects = export_objects
         self.class_map = get_class_map(data_type)
         self.images_dir = os.path.join(root, images_dir)
@@ -160,8 +175,10 @@ class TableRecognizer:
         self.output_class_list = [{'label': c['label'], 'name': c['category_name']} for c in get_colors_map()]
         self.class_list = list(self.class_map.values())
         self.debug_images_dir = f"{os.path.split(os.path.abspath(self.images_dir))[0]}/debug"
-        if self.save_debug_images and not os.path.exists(self.debug_images_dir):
-            os.makedirs(self.debug_images_dir)
+        # for coco
+        self.dataset = {}
+        self.coco_output_dir = f"{os.path.split(os.path.abspath(self.images_dir))[0]}/output"
+        create_dirs()
 
         try:
             with open(os.path.join(self.root, "filelist.txt"), 'r') as file:
@@ -171,6 +188,13 @@ class TableRecognizer:
         png_page_ids = set([f for f in lines if f.strip().endswith(self.image_extension)])
         file_list = set([f for f in os.listdir(self.images_dir) if f.strip().endswith(self.image_extension)])
         self.page_ids = list(file_list.union(png_page_ids))
+
+    def create_dirs(self):
+        if self.save_debug_images and not os.path.exists(self.debug_images_dir):
+            os.makedirs(self.debug_images_dir)
+        if not os.path.exists(self.coco_output_dir):
+            os.makedirs(self.coco_output_dir)
+
 
     def process(self, max_count):
         result_objs = []
@@ -182,8 +206,8 @@ class TableRecognizer:
                 if self.export_objects:
                     obj_details = {
                         "original_file": img_filename,
-                        "cropped_bbox": crop_box,
-                        "padding": padding_box,
+                        "cropped_bbox": self.ds._get_cropped_bbox(img_filename),
+                        "padding": self.ds._get_padding_bbox(img_filename),
                         "detection": tables,
                         "cells_structure": cells,
                         "table_structure": {
@@ -199,15 +223,15 @@ class TableRecognizer:
             result = {"objs": result_objs,
                       "categories": self.output_class_list[:-3]
                       }
-            jsonString = json.dumps(result, cls=NpEncoder)
-            jsonFile = open("output.json", "w")
-            jsonFile.write(jsonString)
-            jsonFile.close()
+
+            with open(os.path.join(self.coco_output_dir, f"{self.data_type}_output.json"), "w") as f:
+                f.write(json.dumps(result, cls=NpEncoder))
 
         if self.make_coco:
             self.process_coco(max_count)
 
-    def get_objects(self, image_path, crop_box, padding_box):
+    #TODO: refactor: no need separet rows/cols/headers
+    def get_objects(self, image_path):
         img_filename = os.path.basename(image_path)
         table_words_dir = f"{self.root}/words/lines/"
         img_words_filepath = os.path.join(table_words_dir, img_filename.replace(".png", "_words.json"))
@@ -216,17 +240,10 @@ class TableRecognizer:
             with open(img_words_filepath, 'r') as f:
                 page_tokens = json.load(f)
         output = self.predict(image_path, page_tokens)
-        #rows = output["pred_table_structures"]["rows"]
-        ##cols = output["pred_table_structures"]["columns"]
-        #headers = output["pred_table_structures"]["headers"]
         cells = output["pred_cells"]
-        #print("debug_results", output["debug_objects"])
         if cells is None:
             cells = []
-        headers = []
-        tables = []
-        cols = []
-        rows = []
+        headers, tables,cols, rows = [],[],[],[]
         if self.data_type == 'detection':
             tables = [obj for obj in output["debug_objects"] if obj['label'] in set(self.class_list)]
         if self.data_type == 'structure':
@@ -238,7 +255,6 @@ class TableRecognizer:
                     obj['label'] in set([self.class_map['table column']])]
 
         # print(rows,cols,cells)
-        print("headers", headers, crop_box, padding_box)
         if self.original_xy_offset:
             rows = self.ds.origin_img_table_xy(rows, img_filename)
             cols = self.ds.origin_img_table_xy(cols, img_filename)
@@ -249,8 +265,7 @@ class TableRecognizer:
 
     def process_coco(self, max_count):
         # for coco
-        self.dataset = {}
-        self.dataset['images'] = [{'id': idx, 'file_name': page_id} for idx, page_id in
+        self.dataset['images'] = [{'id': self.ds.get_original_image_id(page_id), 'file_name': page_id} for idx, page_id in
                                   enumerate(self.page_ids[:max_count])]
         self.dataset['annotations'] = []
         self.dataset["info"] = {
@@ -260,6 +275,8 @@ class TableRecognizer:
             "url": "https://github.com/tias112/table-transformer",
             "date_created": "2022-03-17T09:48:27"
         }
+        self.dataset['categories'] = [{'id': idx} for idx in self.output_class_list]
+        original_category_map = map_to_original_category(self.dataset['categories'])
         ann_id = 0
         for image_id, page_id in enumerate(self.page_ids[:max_count]):
             img_filename = page_id
@@ -285,22 +302,26 @@ class TableRecognizer:
             labels.extend([self.class_map['table column header'] for header in headers])
             labels.extend([table['label'] for table in tables])
             for bbox, label in zip(bboxes, labels):
+                category_id = label
+                if self.for_analysis:
+                    category_id = original_category_map[label]
                 ann = {'area': (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]),
                        'iscrowd': 0,
                        'bbox': [bbox[0], bbox[1], bbox[2] - bbox[0], bbox[3] - bbox[1]],
-                       'category_id': label,
-                       'image_id': image_id,
+                       'category_id': category_id,
+                       'image_id': self.ds.get_original_image_id(img_filename),
                        'id': ann_id,
                        'ignore': 0,
                        'segmentation': []}
                 self.dataset['annotations'].append(ann)
                 ann_id += 1
-            self.dataset['categories'] = [{'id': idx} for idx in self.output_class_list]
 
-        jsonString = json.dumps(self.dataset, cls=NpEncoder)
-        jsonFile = open(f"coco_{self.data_type}_output.json", "w")
-        jsonFile.write(jsonString)
-        jsonFile.close()
+        result = self.dataset
+        if self.for_analysis:
+            result = [ann for ann in self.dataset['annotations']
+                      if ann['category_id'] > 0 and not ann['image_id'] is None]
+        with open(os.path.join(self.coco_output_dir, f"coco_{self.data_type}_output.json"), "w") as f:
+            f.write(json.dumps(result, cls=NpEncoder))
 
     def cell_label(self, cell):
         if 'header' in cell.keys() and cell['header']:
