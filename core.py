@@ -222,6 +222,7 @@ class TableRecognizer:
         ##cols = output["pred_table_structures"]["columns"]
         #headers = output["pred_table_structures"]["headers"]
         cells = output["pred_cells"]
+        print("debug_results", output["debug_objects"])
         if cells is None:
             cells = []
         headers = []
@@ -244,7 +245,7 @@ class TableRecognizer:
             cols = self.origin_img_table_xy(cols, crop_box, padding_box)
             cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
             headers = self.origin_img_table_xy(headers, crop_box, padding_box)
-        # print("headers", headers)
+        print("headers", headers)
         return rows, cols, headers, cells, tables, output["debug_image"]
 
     def process_coco(self, max_count):

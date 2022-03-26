@@ -122,6 +122,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
 
             # Closing file
         f.close()
+        print("processed:", first_samples.keys())
 
     def _process_words(
         self, words, image_file
