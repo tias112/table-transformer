@@ -90,7 +90,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
 
         self.table_objs[filename].update({"cropped_bbox": table_bbox})
 
-        self.table_objs[filename].update({"padding": padding_sizes})
+        self.table_objs[filename].update({"padding": list(padding_sizes)})
         # extend with white paddings
         if self.do_padding:
             img = ImageOps.expand(img, padding_sizes, (255, 255, 255))
