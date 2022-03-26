@@ -178,7 +178,7 @@ class TableRecognizer:
         # for coco
         self.dataset = {}
         self.coco_output_dir = f"{os.path.split(os.path.abspath(self.images_dir))[0]}/output"
-        create_dirs()
+        self.create_dirs()
 
         try:
             with open(os.path.join(self.root, "filelist.txt"), 'r') as file:
