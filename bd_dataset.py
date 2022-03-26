@@ -48,11 +48,17 @@ class BDTablesDataset(torch.utils.data.Dataset):
         self.image_processed = os.path.join(root, "processed") #"C:/temp/processed/"#
         self.words_directory = os.path.join(root, "words")
         self.category_map = get_category_map()
+        lines = os.listdir(self.image_directory)
+        png_pages = set(
+            [f for f in lines if f.strip().endswith(self.image_extension)])
+
         with open(os.path.join(root, "val.json"), "r") as file:
             data = json.load(file)
             imageid_dict = {k['id']: k['file_name'] for k in data['images']}
             self.table_objs = {imageid_dict[obj['image_id']]: obj for obj in data['annotations'] if
-                               'category_id' in obj and obj['category_id'] == category_map['table']}
+                               'category_id' in obj
+                               and obj['category_id'] == category_map['table']
+                               and imageid_dict[obj['image_id']] in png_pages}
 
 
     #return bounding box of cropped table from original image
@@ -107,12 +113,10 @@ class BDTablesDataset(torch.utils.data.Dataset):
             img = self._do_extract_table_img(image_file, table_obj['bbox'], (35, 30, 30, 30))
             f.write(f"{image_file}\n")
 
-            # cv2.imwrite(f"processed/{os.path.basename(image_path)}.jpg", output["debug_image"])
             img = np.array(img)
             if not os.path.exists(self.image_processed):
                 os.makedirs(self.image_processed)
-            # cv2.imwrite(f"processed/{image_file}.jpg", img)
-            print(cv2.imwrite(f"{self.image_processed}/{image_file}", img))
+            cv2.imwrite(f"{self.image_processed}/{image_file}", img)
             # returns JSON object as
             # a dictionary
 
