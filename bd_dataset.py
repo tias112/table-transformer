@@ -79,7 +79,9 @@ class BDTablesDataset(torch.utils.data.Dataset):
         return [0, 0, 0, 0]
 
     def get_original_image_id(self, filename):
-        return self.name2imageid_dict[filename]
+        if filename in self.name2imageid_dict.keys():
+            return self.name2imageid_dict[filename]
+        return None
 
     def origin_img_cell_xy(self, pred_cells,img_filename):
         crop_box = self._get_cropped_bbox(img_filename)
