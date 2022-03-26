@@ -76,6 +76,26 @@ class BDTablesDataset(torch.utils.data.Dataset):
                 return table_obj['padding']
         return [0, 0, 0, 0]
 
+    def origin_img_cell_xy(self, pred_cells,img_filename):
+        crop_box = self._get_cropped_bbox(img_filename)
+        padding_box = self._get_padding_bbox(img_filename)
+        crop_offset = [crop_box[0], crop_box[1], crop_box[0], crop_box[1]]
+        padding_offset = [padding_box[0], padding_box[1], padding_box[0], padding_box[1]]
+        for cell in pred_cells:
+            cell['bbox'] = list(np.array(cell['bbox']) + np.array(crop_offset) - np.array(padding_offset))
+            for span in cell['spans']:
+                span['bbox'] = list(np.array(span['bbox']) + np.array(crop_offset) - np.array(padding_offset))
+        return pred_cells
+
+    def origin_img_table_xy(self, items, img_filename):
+        crop_box = self._get_cropped_bbox(img_filename)
+        padding_box = self._get_padding_bbox(img_filename)
+        crop_offset = [crop_box[0], crop_box[1], crop_box[0], crop_box[1]]
+        padding_offset = [padding_box[0], padding_box[1], padding_box[0], padding_box[1]]
+        for item in items:
+            item['bbox'] = list(np.array(item['bbox']) + np.array(crop_offset) - np.array(padding_offset))
+        return items
+
     # Cropped image of above dimension with small padding
     # (It will not change original image)
     def _do_extract_table_img(self, filename, bbox, padding_sizes):
@@ -170,5 +190,6 @@ if __name__ == "__main__":
          do_crop=True,
          do_padding=True,
         category_map=get_category_map())
-    ds._process_images(226)
-    ds._process_text(226)
+#    ds._process_images(226)
+ #   ds._process_text(226)
+

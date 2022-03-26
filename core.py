@@ -177,10 +177,8 @@ class TableRecognizer:
         if self.export_objects:
             for image_id, image_path in enumerate(tqdm(glob.glob(f"{self.images_dir}/*.png"), total=max_count)):
                 img_filename = os.path.basename(image_path)
-                crop_box = self.ds._get_cropped_bbox(img_filename)
-                padding_box = self.ds._get_padding_bbox(img_filename)
 
-                rows, cols, cells, headers, tables, debug_image = self.get_objects(image_path, crop_box, padding_box)
+                rows, cols, cells, headers, tables, debug_image = self.get_objects(image_path)
                 if self.export_objects:
                     obj_details = {
                         "original_file": img_filename,
@@ -242,10 +240,10 @@ class TableRecognizer:
         # print(rows,cols,cells)
         print("headers", headers, crop_box, padding_box)
         if self.original_xy_offset:
-            rows = self.origin_img_table_xy(rows, crop_box, padding_box)
-            cols = self.origin_img_table_xy(cols, crop_box, padding_box)
-            cells = self.origin_img_cell_xy(cells, crop_box, padding_box)
-            headers = self.origin_img_table_xy(headers, crop_box, padding_box)
+            rows = self.ds.origin_img_table_xy(rows, img_filename)
+            cols = self.ds.origin_img_table_xy(cols, img_filename)
+            cells = self.ds.origin_img_cell_xy(cells, img_filename)
+            headers = self.ds.origin_img_table_xy(headers, img_filename)
         #print("headers", headers)
         return rows, cols, headers, cells, tables, output["debug_image"]
 
@@ -324,17 +322,6 @@ class TableRecognizer:
         b = [(x_c - 0.5 * w), (y_c - 0.5 * h), (x_c + 0.5 * w), (y_c + 0.5 * h)]
         return torch.stack(b, dim=1)
 
-    def origin_img_cell_xy(self, pred_cells, crop_box, padding_box):
-        for cell in pred_cells:
-            cell['bbox'] = list(np.array(cell['bbox']) + np.array(crop_box) - np.array(padding_box))
-            for span in cell['spans']:
-                span['bbox'] = list(np.array(span['bbox']) + np.array(crop_box) - np.array(padding_box))
-        return pred_cells
-
-    def origin_img_table_xy(self, items, crop_box, padding_box):
-        for item in items:
-            item['bbox'] = list(np.array(item['bbox']) + np.array(crop_box) - np.array(padding_box))
-        return items
 
     def objects_to_grid_cells(self, outputs, page_tokens, image):
         """     from grits
