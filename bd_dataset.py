@@ -50,7 +50,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
         self.words_directory = os.path.join(root, "words")
         self.category_map = get_category_map()
         lines = os.listdir(self.image_directory)
-        png_images = set(
+        self.png_images = set(
             [f for f in lines if f.strip().endswith(self.image_extension)])
 
         with open(os.path.join(root, "val.json"), "r") as file:
@@ -60,7 +60,7 @@ class BDTablesDataset(torch.utils.data.Dataset):
             self.table_objs = {imageid_dict[obj['image_id']]: obj for obj in data['annotations'] if
                                'category_id' in obj
                                and obj['category_id'] == category_map['table']
-                               and imageid_dict[obj['image_id']] in png_images}
+                               and imageid_dict[obj['image_id']] in self.png_images}
 
 
     #return bounding box of cropped table from original image
@@ -156,13 +156,13 @@ class BDTablesDataset(torch.utils.data.Dataset):
     ) -> List[m.TextToken]:
         image_path = os.path.join(self.image_processed, image_file)
 
-        tokens = self.words_to_tokens(words)
+        tokens = self._words_to_tokens(words)
         raster_text = arrange_text(
             tokens, image_path, self.words_directory
         )
         return raster_text
 
-    def words_to_tokens(self, words):
+    def _words_to_tokens(self, words):
         return [TextToken(bbox=tuple([float(word[0][0][0]), float(word[0][0][1]), float(word[0][2][0]), float(word[0][3][1])]), text=word[1]) for word in words]
 
 
